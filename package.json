@@ -1,14 +1,15 @@
 {
   "name": "url-shortener",
-  "version": "1.0.0",
-  "description": "Production-grade URL Shortener with custom LFU caching, analytics, and admin APIs",
+  "version": "1.1.0",
+  "description": "Production-grade URL Shortener built with Node.js, Express & MySQL — featuring a hand-built O(1) LFU cache, JWT admin authentication with OTP password reset, click analytics, QR codes, and full audit logging.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "db:init": "node src/scripts/initDb.js",
-    "db:seed": "node src/scripts/seedAdmin.js"
+    "db:seed": "node src/scripts/seedAdmin.js",
+    "test": "echo \"No automated test suite yet — see CONTRIBUTING.md for manual verification steps and CHANGELOG.md Future Enhancements.\" && exit 0"
   },
   "keywords": [
     "url-shortener",
@@ -16,9 +17,30 @@
     "express",
     "mysql",
     "lfu-cache",
-    "jwt-auth"
+    "lfu",
+    "caching",
+    "jwt-auth",
+    "jwt",
+    "authentication",
+    "rest-api",
+    "mvc",
+    "bcrypt",
+    "qr-code",
+    "analytics",
+    "portfolio-project"
   ],
-  "author": "",
+  "author": {
+    "name": "Aditya Thakur",
+    "url": "https://github.com/adityathakur-09"
+  },
+  "homepage": "https://github.com/adityathakur-09/url-shortener#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adityathakur-09/url-shortener.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adityathakur-09/url-shortener/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",

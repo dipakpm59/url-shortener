@@ -1,45 +1,98 @@
-# Snipr — Production-Grade URL Shortener
+<p align="center">
+  <img src="assets/banner.svg" alt="Snipr — Production-grade URL Shortener" width="100%" />
+</p>
 
-**Live demo:** https://web-production-581a.up.railway.app — the shorten/redirect/QR-code flow is fully public; admin dashboard credentials available on request.
+<h1 align="center">Snipr</h1>
+<p align="center"><strong>A production-style URL Shortener built with Node.js, Express &amp; MySQL</strong><br/>Featuring a hand-built O(1) LFU cache, JWT admin authentication with OTP password reset, click analytics, QR codes, and full audit logging.</p>
 
-A backend-focused URL shortener built with Node.js, Express, and MySQL — featuring a **hand-built LFU (Least Frequently Used) cache** in front of the database, click analytics, QR codes, URL expiry, soft delete, JWT-based admin authentication, and audited admin APIs. Built as a portfolio/interview-prep project demonstrating layered architecture, caching strategy, and production concerns (security, logging, error handling).
+<p align="center">
+  <a href="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-339933?logo=node.js&logoColor=white" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white" alt="Express"/>
+  <img src="https://img.shields.io/badge/MySQL-8%2B-4479A1?logo=mysql&logoColor=white" alt="MySQL"/>
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"/>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
+  <img src="https://img.shields.io/badge/deployed%20on-Railway-0B0D0E?logo=railway&logoColor=white" alt="Deployed on Railway"/>
+</p>
+
+<p align="center">
+  <a href="#live-demo">Live Demo</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#api-documentation">API Docs</a> ·
+  <a href="#faq">FAQ</a>
+</p>
+
+---
+
+## Live Demo
+
+🔗 **https://web-production-581a.up.railway.app**
+
+The shorten → redirect → QR code flow is fully public — try it right now, no login needed. Admin dashboard credentials available on request (see [Author](#author)).
+
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+- [Folder Structure](#folder-structure)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [Running Locally](#running-locally)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+- [Admin Dashboard](#admin-dashboard)
+- [Analytics Dashboard](#analytics-dashboard)
+- [Authentication &amp; Security](#authentication--security)
+- [LFU Cache](#lfu-cache)
+- [QR Code Generation](#qr-code-generation)
+- [Logging](#logging)
+- [Future Enhancements](#future-enhancements)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [Author](#author)
+- [License](#license)
+
+## Features
+
+| | |
+|---|---|
+| 🔗 **URL Shortening** | Custom aliases, automatic duplicate detection, optional expiry dates |
+| ⚡ **Custom LFU Cache** | Hand-built, from-scratch O(1) Least-Frequently-Used cache in front of MySQL — no Redis |
+| 🔐 **JWT Admin Auth** | HttpOnly cookies, bcrypt hashing, account lockout, full audit logging |
+| 📧 **OTP Password Reset** | 6-digit code, sandboxed test-mailer (no real email credentials required) |
+| 📊 **Click Analytics** | Click counts, last-accessed timestamps, clicks-over-time chart |
+| 📱 **QR Codes** | Instantly generated for every short URL |
+| 🗑️ **Soft Delete &amp; Restore** | Links are never hard-deleted — fully reversible |
+| 🛡️ **Hardened Security** | Helmet, rate limiting, HPP, XSS sanitization, parameterized SQL everywhere |
+| 🎨 **Premium Dark UI** | Bootstrap 5 glassmorphism design — landing, admin, and analytics dashboards |
+| 📝 **Structured Logging** | Separate app/error/request logs |
+
+## Screenshots
+
+> Real screenshots aren't checked in yet — see [`docs/screenshots/`](docs/screenshots/) for instructions on adding them. Meanwhile, the [live demo](#live-demo) is the fastest way to see it running.
+
+| Landing Page | Admin Dashboard |
+|---|---|
+| *(screenshot placeholder — see [live demo](#live-demo))* | *(screenshot placeholder — see [live demo](#live-demo))* |
+
+| Analytics Dashboard | Login Page |
+|---|---|
+| *(screenshot placeholder — see [live demo](#live-demo))* | *(screenshot placeholder — see [live demo](#live-demo))* |
 
 ## Architecture
 
-```
-                        ┌─────────────┐
-                        │   Client    │  Browser / curl / Postman
-                        └──────┬──────┘
-                               ▼
-                     ┌───────────────────┐
-                     │   Express Server   │  server.js / src/app.js
-                     └─────────┬─────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │ Security Middleware │  helmet, cors, hpp, compression,
-                     │                     │  rate-limit, xss sanitizer
-                     └─────────┬─────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │      Router        │  src/routes
-                     └─────────┬─────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │    Controller      │  src/controllers
-                     └─────────┬─────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │    Validator        │  src/validators
-                     └─────────┬─────────┘
-                               ▼
-                     ┌───────────────────┐
-                     │   Service Layer     │  src/services (business logic)
-                     └─────┬───────┬─────┘
-                           ▼       ▼
-                  ┌───────────┐ ┌───────────┐
-                  │ LFU Cache │ │  MySQL DB  │
-                  │(in-memory)│ │ (via pool) │
-                  └───────────┘ └───────────┘
+Layered MVC + Service architecture — Router → Controller → Validator → Service → Model/Cache. Full diagrams (system architecture, MVC sequence flow, request flows) live in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+```mermaid
+flowchart LR
+    Client --> MW[Security Middleware] --> Router --> Controller --> Service
+    Service --> Cache[(LFU Cache)]
+    Service --> DB[(MySQL)]
 ```
 
 **Redirect flow (the hot path):**
@@ -57,328 +110,194 @@ GET /:shortCode → LFU cache lookup
 src/
 ├── config/       # env loading, MySQL connection pool
 ├── constants/    # HTTP status codes, user-facing messages
-├── models/       # parameterized SQL query modules (no ORM) — url, clickEvent, admin, adminLog
-├── validators/   # input validation (URL format, alias rules, login/password rules)
+├── models/       # parameterized SQL query modules (no ORM)
+├── validators/   # input validation (URL, auth, password rules)
 ├── cache/        # custom O(1) LFU cache implementation
-├── services/     # business logic: url, cache, qrcode, analytics, auth
+├── services/     # business logic: url, cache, qrcode, analytics, auth, email
 ├── controllers/  # HTTP req/res translation
 ├── routes/       # Express routers
-├── middleware/   # error handling, rate limiting, security stack, auth (JWT) guards
-├── utils/        # AppError, asyncHandler, logger, short-code gen, jwt, password hashing
-├── scripts/      # schema.sql + DB init script + seedAdmin.js
-├── app.js        # Express app assembly
+├── middleware/   # error handling, rate limiting, security stack, JWT auth guards
+├── utils/        # AppError, asyncHandler, logger, jwt, password hashing, otp
+├── scripts/      # schema.sql + DB init/seed scripts
+└── app.js        # Express app assembly
+
 public/           # static frontend assets (css/js)
-views/            # static HTML pages served by Express (incl. login.html)
+views/            # server-rendered static HTML pages
+docs/             # architecture, API, database, security, deployment, cache docs
+.github/          # issue templates, PR template, CI workflow
 logs/             # app.log / error.log / request.log (gitignored)
 server.js         # process entry point
 ```
 
-## LFU Cache
+## Tech Stack
 
-A custom **O(1) Least-Frequently-Used cache** (`src/cache/LFUCache.js`), used cache-aside in front of MySQL for the redirect endpoint. No Redis — implemented from scratch with `get/put/delete/updateFrequency/eviction/size/clear/statistics`.
+**Backend:** Node.js, Express.js, MySQL (via `mysql2`), JWT (`jsonwebtoken`), bcrypt (`bcryptjs`)
+**Frontend:** HTML5, Bootstrap 5, vanilla JavaScript, Chart.js
+**Security:** Helmet, express-rate-limit, HPP, `xss`, CORS
+**Email:** Nodemailer (Ethereal sandboxed test SMTP)
+**Deployment:** Railway (app + managed MySQL)
 
-- **Why LFU over no cache**: redirects vastly outnumber URL creations in real traffic; caching hot short codes avoids a DB round-trip on every redirect.
-- **Why LFU over LRU**: URL shortener traffic is often power-law distributed — a small number of links receive the vast majority of clicks. LFU keeps genuinely popular links resident even if they weren't clicked in the last few minutes, whereas LRU can evict a very popular link just because it was momentarily quiet.
-- **Time complexity**: O(1) for `get`, `put`, `delete`, and `eviction` — achieved via a `key → node` map plus a `frequency → ordered map of nodes` structure, with a tracked `minFreq` pointer so eviction never scans.
-- **Space complexity**: O(capacity).
-- **Production path**: swap `src/services/cache.service.js`'s in-process `LFUCache` for a Redis client using `ZADD`/sorted sets (or Redis's own LFU eviction policy, `allkeys-lfu`) — the rest of the codebase (service/controller layers) wouldn't need to change, since they only depend on the `get/put/delete/statistics` interface.
+## Installation
 
-## Authentication
-
-Single-role admin authentication — there are no public user accounts, only one or more `admins` who can manage the system.
-
-**Login flow:**
-```
-Visit /admin
-    │
-    ▼
-No valid admin_token cookie?
-    │
-    ▼
-302 redirect → /login
-    │
-    ▼
-POST /api/auth/login (email + password)
-    │
-    ▼
-bcrypt.compare(password, password_hash)
-    │
-    ▼
-Success → JWT signed (2h expiry) → set as HttpOnly cookie → redirect to /admin
-Failure → increment failed_attempts → 5th failure locks the account 15 minutes
-```
-
-**JWT flow (every subsequent protected request):**
-```
-Request arrives with Cookie: admin_token=<jwt>
-    │
-    ▼
-verifyJWT        — decode + check signature/expiry (no DB hit)
-    │
-    ▼
-authenticateAdmin — look up admins.id from the token, attach req.admin
-    │                (catches "admin deleted after token was issued")
-    ▼
-requireAdmin      — guard; placeholder for future role checks
-    │
-    ▼
-route handler runs with req.admin available
-```
-
-Token invalid/missing → for page routes (`/admin`, `/analytics`), the centralized `errorHandler` redirects to `/login` (see `src/middleware/errorHandler.js`); for `/api/*` routes it returns `401` JSON instead, so the frontend's shared `apiRequest()` helper can react (redirect client-side) without a full page reload.
-
-**Route protection:**
-
-| Public (no login required) | Protected (admin login required) |
-|---|---|
-| `/`, `/login` | `/admin`, `/analytics` (pages) |
-| `POST /api/url` (shorten) | `PUT/DELETE /api/url/:id`, `POST /api/url/:id/restore` |
-| `GET /:shortCode` (redirect) | all of `/api/admin/*` |
-| `GET /api/url/:shortCode`, `.../qrcode` | `/api/auth/logout`, `/api/auth/me`, `/api/auth/change-password` |
-
-> **Deliberate deviation from a fully literal reading of "everything else redirects to login":** the QR-code-after-shorten step is part of the existing *public* landing-page flow (an anonymous visitor shortens a URL and immediately sees its QR code on the same page). Locking that down would have broken an existing feature, so URL creation, redirect, metadata lookup, and QR code generation stay public; only administrative mutations (update/delete/restore) and the `/api/admin/*` surface require login. One consequence: `/health` is also behind auth, so it can no longer serve as an infrastructure health-check endpoint without a session — see the note under [Deployment](#deployment-railway).
-
-**Cookie configuration** (`src/controllers/auth.controller.js`):
-- `httpOnly: true` — inaccessible to JavaScript (`document.cookie` can't read it), which is what actually defeats token-stealing XSS.
-- `secure: true` in production — cookie is only ever sent over HTTPS.
-- `sameSite: 'lax'` — the cookie isn't attached to most cross-site requests, mitigating CSRF.
-- `maxAge` set only when **Remember Me** is checked (persistent cookie surviving browser restarts); otherwise it's a session cookie. Either way the JWT itself always expires after 2 hours — "remember me" only controls whether the *browser* keeps offering an unexpired token back, not how long that token is valid for.
-
-**How to create a new admin:**
-```bash
-# uses ADMIN_USERNAME / ADMIN_EMAIL / ADMIN_PASSWORD from .env by default
-npm run db:seed
-
-# to create a different/additional admin, override those three vars for one run:
-ADMIN_USERNAME=jane ADMIN_EMAIL=jane@example.com ADMIN_PASSWORD='Str0ng!Pass' npm run db:seed
-```
-The script (`src/scripts/seedAdmin.js`) is idempotent — re-running it with an email that already exists just skips instead of erroring, and it enforces the same password complexity rule as the change-password flow.
-
-**Login attempt lockout** (`admins.failed_attempts` / `admins.locked_until`, enforced in `src/services/auth.service.js`): 5 consecutive failed attempts against one account locks it for 15 minutes, independent of which IP the attempts came from. This is deliberately separate from the IP-based `loginLimiter` in `src/middleware/rateLimiter.js` — the two stop different attacks (one attacker brute-forcing one account from many IPs vs. one IP hammering many accounts).
-
-**Audit log** (`admin_logs` table, `src/models/adminLog.model.js`): every `login`, `login_failed`, `account_locked`, `logout`, `password_change`, `password_reset_requested`, `password_reset`, `delete_url`, and `restore_url` event is recorded with the acting admin (when known), IP, user agent, and timestamp.
-
-**Forgot password (OTP-based, no real email account required):**
-```
-POST /api/auth/forgot-password {email}
-  → admin found?  generate 6-digit OTP, sha256-hash it, store with a 10-min
-                   expiry, email it via Ethereal
-  → not found?    same generic response either way (no enumeration)
-
-POST /api/auth/reset-password {email, otp, newPassword, confirmPassword}
-  → sha256(otp) === stored hash, and not expired?
-  → yes: hash + store new password, clear the OTP (one-time use),
-         unlock the account (failed_attempts/locked_until reset too —
-         a successful reset is proof enough to also clear a lockout)
-  → no:  generic "Invalid or expired reset code."
-```
-Email sending goes through **Ethereal** (`src/services/email.service.js`), Nodemailer's own fake-SMTP testing service — it registers a throwaway inbox automatically, no signup and no real credentials of any kind. Mail sent through it is never actually delivered anywhere; it's only viewable via a private preview link, which `POST /api/auth/forgot-password` returns in its response (`data.previewUrl`) when not running in production. This was a deliberate choice over wiring up a real provider: a real SMTP account (Gmail or otherwise) tied to a public portfolio repo is a real credential-exposure risk, and Ethereal demonstrates the exact same SMTP send code path a real provider would use. **For production**, swap the transporter in `email.service.js` for a real provider (Resend, SendGrid, Brevo, etc.) using an API-key env var — nothing else in the auth flow needs to change.
-
-Both the OTP-request and OTP-verify endpoints are separately rate-limited (`otpRequestLimiter`, `otpVerifyLimiter` in `src/middleware/rateLimiter.js`) — a 6-digit code is only ~1 million possibilities, so verification attempts are capped tightly enough to make brute-forcing it infeasible inside its 10-minute expiry window.
-
-## Database Schema
-
-Four tables, see `src/scripts/schema.sql`:
-
-- **`urls`** — `id`, `long_url`, `long_url_hash` (SHA-256, indexed for duplicate detection), `short_code` (unique), `is_custom_alias`, `click_count`, `created_at`, `last_accessed_at`, `expires_at`, `is_deleted`, `deleted_at`.
-- **`click_events`** — one row per redirect: `url_id` (FK), `clicked_at`, `referrer`, `user_agent`, `ip_hash` — powers the "clicks over time" chart without bloating the `urls` table.
-- **`admins`** — `id`, `username`, `email` (both unique), `password_hash` (bcrypt), `failed_attempts`, `locked_until`, `reset_otp_hash` (SHA-256, null unless a reset is in progress), `reset_otp_expires`, `created_at`, `updated_at`.
-- **`admin_logs`** — `id`, `admin_id` (nullable FK — a failed login against an unknown email still gets logged), `action`, `details`, `ip_address`, `user_agent`, `created_at`.
-
-## API Reference
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/login` | Public | Login, sets `HttpOnly` JWT cookie |
-| POST | `/api/auth/logout` | 🔒 | Clears the session cookie |
-| GET | `/api/auth/me` | 🔒 | Current admin's profile |
-| PUT | `/api/auth/change-password` | 🔒 | Change password (complexity-validated) |
-| POST | `/api/auth/forgot-password` | Public | Request a 6-digit OTP reset code (rate-limited) |
-| POST | `/api/auth/reset-password` | Public | Verify OTP + set a new password (rate-limited) |
-| POST | `/api/url` | Public | Create a short URL |
-| GET | `/api/url/:shortCode` | Public | Get metadata for a short URL (JSON) |
-| GET | `/api/url/:shortCode/qrcode` | Public | Get a QR code (data URL) for a short URL |
-| PUT | `/api/url/:id` | 🔒 | Update a URL's destination |
-| DELETE | `/api/url/:id` | 🔒 | Soft-delete a URL (audit-logged) |
-| POST | `/api/url/:id/restore` | 🔒 | Restore a soft-deleted URL (audit-logged) |
-| GET | `/:shortCode` | Public | **Redirect** to the original URL (302) |
-| GET | `/api/admin/urls` | 🔒 | List URLs (search, sort, paginate) |
-| GET | `/api/admin/dashboard` | 🔒 | Aggregate stats + most-clicked + clicks-over-time + cache stats |
-| GET | `/api/admin/analytics` | 🔒 | Most-clicked + clicks-over-time only |
-| GET | `/api/admin/cache` | 🔒 | LFU cache statistics |
-| DELETE | `/api/admin/cache` | 🔒 | Clear the cache |
-| GET | `/health` | 🔒 | Health check (DB connectivity + uptime) |
-
-🔒 = requires a valid `admin_token` cookie (see [Authentication](#authentication)).
-
-**Example — create a short URL:**
-```bash
-curl -X POST http://localhost:3000/api/url \
-  -H "Content-Type: application/json" \
-  -d '{"longUrl": "https://example.com/some/very/long/path", "customAlias": "my-link"}'
-```
-```json
-{
-  "success": true,
-  "message": "Short URL created successfully.",
-  "data": {
-    "id": 1,
-    "shortCode": "my-link",
-    "shortUrl": "http://localhost:3000/my-link",
-    "longUrl": "https://example.com/some/very/long/path",
-    "clickCount": 0,
-    "createdAt": "2026-07-03T10:00:00.000Z"
-  }
-}
-```
-
-## Getting Started
-
-**Prerequisites:** Node.js 18+, a running MySQL 8 instance.
+**Prerequisites:** Node.js 18+, a running MySQL 8+ instance.
 
 ```bash
+git clone https://github.com/adityathakur-09/url-shortener.git
+cd url-shortener
 npm install
-cp .env.example .env      # edit DB credentials
-npm run db:init           # creates the database + tables
-npm run dev                # starts on http://localhost:3000
 ```
 
 ## Environment Variables
 
-See `.env.example` for the full list — key ones:
+Copy the example file and fill in your own values:
+
+```bash
+cp .env.example .env
+```
 
 | Variable | Purpose |
 |---|---|
 | `PORT`, `BASE_URL` | Server port and public base URL (used to build short URLs) |
-| `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL connection |
-| `CACHE_CAPACITY` | Max entries held by the LFU cache |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL connection |
+| `CACHE_CAPACITY` | Max entries held by the LFU cache (default `500`) |
 | `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS` | API rate limiting |
 | `SHORT_CODE_LENGTH` | Length of generated short codes |
-| `JWT_SECRET` | Signing key for admin session tokens — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `JWT_SECRET` | Signing key for admin sessions — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN`, `COOKIE_NAME` | Session token lifetime (default `2h`) and cookie name |
 | `MAX_LOGIN_ATTEMPTS`, `LOCK_DURATION_MINUTES` | Account lockout thresholds |
 | `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Used only by `npm run db:seed` |
+| `OTP_EXPIRY_MINUTES` | Password-reset OTP lifetime |
 
-## Security
+See [.env.example](.env.example) for the complete, always-up-to-date list.
 
-- **Helmet** — sets secure HTTP headers, restrictive CSP.
-- **express-rate-limit** — global + a stricter limiter on URL creation.
-- **HPP** — blocks HTTP parameter pollution.
-- **compression** — gzip responses.
-- **xss (sanitizer)** — strips script/HTML from request body/query/params before it reaches business logic.
-- **Parameterized SQL** — every query in `src/models` uses named placeholders via `mysql2`, never string concatenation.
-- **Centralized error handling** — operational errors return safe messages; unexpected errors never leak stack traces in production.
-- **bcrypt password hashing** (via `bcryptjs`, 12 salt rounds) — passwords are never stored or logged in plaintext; see [Interview Prep](#interview-prep) for why hashing (not encryption) is correct here.
-- **JWT in an `HttpOnly`, `Secure` (prod), `SameSite=Lax` cookie** — never in `localStorage`; see [Interview Prep](#interview-prep) for why.
-- **Per-account login lockout** (5 failed attempts → 15 min lock) layered with a **per-IP rate limiter** on `/api/auth/login`.
-- **Audit logging** of every security-relevant admin action (`admin_logs` table).
+## Database Setup
 
-## Deployment (Railway)
-
-Live at **https://web-production-581a.up.railway.app**.
-
-Deployed as two services in one Railway project:
-- **`web`** — this app, source-connected to the `main` branch of this GitHub repo (pushes to `main` auto-deploy).
-- **`MySQL`** — a managed MySQL instance in the same project, reached over Railway's private network (`mysql.railway.internal`) so traffic between the app and DB never leaves Railway's internal network.
-
-**To reproduce this deployment yourself:**
 ```bash
-railway login
-railway init --name your-project-name
-railway add --database mysql
-railway add --service web
-railway service source connect --repo <you>/<your-repo> --branch main --service web
-railway domain --service web --port 3000   # generates a public URL
-
-# Point the app at the MySQL service using Railway's cross-service variable
-# references (auto-updates if the DB's credentials ever change):
-railway variable set 'DB_HOST=${{MySQL.MYSQLHOST}}' --service web
-railway variable set 'DB_PORT=${{MySQL.MYSQLPORT}}' --service web
-railway variable set 'DB_USER=${{MySQL.MYSQLUSER}}' --service web
-railway variable set 'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}' --service web
-railway variable set 'DB_NAME=${{MySQL.MYSQLDATABASE}}' --service web
-# ...plus JWT_SECRET, BASE_URL, CORS_ORIGIN, ADMIN_*, etc. — see .env.example
-# for the full list.
-
-# One-time schema + admin setup, run locally against the DB's public proxy
-# (find the public host/port with `railway variable list --service MySQL --kv`,
-# under MYSQL_PUBLIC_URL):
-DB_HOST=<proxy-host> DB_PORT=<proxy-port> DB_USER=root DB_PASSWORD=<...> DB_NAME=railway \
-  node src/scripts/initDb.js
-DB_HOST=<proxy-host> DB_PORT=<proxy-port> DB_USER=root DB_PASSWORD=<...> DB_NAME=railway \
-  node src/scripts/seedAdmin.js
+npm run db:init     # creates the database + all tables (idempotent — safe to re-run)
+npm run db:seed      # creates the default admin from ADMIN_* env vars (idempotent)
 ```
 
-**Note:** `/health` now sits behind admin auth (see [Authentication](#authentication)), so it isn't wired up as an automated infra health check here — Railway is currently just checking that the process responds on its port. See [Future Improvements](#future-improvements) for adding back a dedicated public liveness route.
+Full schema, ER diagram, and the reasoning behind every column/index: **[docs/DATABASE.md](docs/DATABASE.md)**.
 
-## Future Improvements
+## Running Locally
 
-- Swap the in-process LFU cache for Redis to share cache state across multiple server instances.
-- Move click-event writes to a message queue so redirect latency is fully decoupled from analytics.
-- Read replica for MySQL to separate redirect (read) traffic from write traffic.
-- Refresh tokens / token rotation, so a stolen-but-unexpired JWT has a shorter usable window than a full 2 hours.
-- A real role system (`requireAdmin` is already structured to grow into `requireAdmin(['superadmin'])`-style role checks).
-- A visible audit log page in the admin UI (the data is already captured in `admin_logs`, just not surfaced yet).
-- A small unauthenticated `GET /healthz` liveness route so hosting platforms can run an automated health check without exposing the detailed `/health` diagnostics publicly.
-
-## Interview Prep
-
-### Why JWT (instead of server-side sessions)?
-A JWT is a self-contained, signed claim ("this is admin #1, issued at X, expires at Y") that the server can verify with just a signature check — no database lookup or shared session store required. That fits this app's single-process deployment well. The trade-off (and it's a real one): a traditional server-side session can be revoked instantly by deleting it from the store; a JWT is valid until it expires, full stop, unless you build a revocation mechanism (blocklist, short expiry + refresh tokens, etc.) on top. This app leans on a short 2-hour expiry rather than building revocation, which is a reasonable trade-off for an admin-only tool but worth naming explicitly in an interview as a limitation you chose consciously.
-
-### Why bcrypt (rather than, say, SHA-256, or storing plaintext)?
-Never plaintext — a DB leak would hand over every credential directly. Never a fast general-purpose hash like SHA-256 either — those are *designed* to be fast, which is exactly wrong for passwords: it makes brute-forcing billions of guesses per second on cheap hardware (especially with GPUs) trivial. bcrypt is deliberately slow and has a tunable cost factor (`SALT_ROUNDS = 12` here), so brute-forcing scales with attacker cost, not just attacker patience. It also salts automatically, so two admins with the same password get different hashes, defeating precomputed rainbow-table attacks.
-
-### Why HttpOnly cookies for the JWT?
-`httpOnly: true` means client-side JavaScript cannot read the cookie via `document.cookie` — full stop, even if an attacker manages to inject a `<script>` tag into your page (XSS). That's the entire point: it removes the JWT from the attack surface that XSS can reach, without you having to be perfect about escaping every single place user input might render.
-
-### Why NOT localStorage?
-`localStorage` is fully readable by any JavaScript running on the page — your own code, a compromised third-party script, or an injected XSS payload. If a token lives there, a single XSS bug anywhere on the page means an attacker can read it and impersonate the admin from anywhere, no cookie theft/network access required. `localStorage` also isn't sent automatically with requests, so you'd have to manually attach it to every fetch — extra code, extra chances to forget it somewhere. An `HttpOnly` cookie is both safer (invisible to JS) and simpler (the browser attaches it automatically). The trade-off you take on instead is CSRF, which is why `SameSite=Lax` is set — cookies aren't attached to most cross-site requests, closing most of that gap.
-
-### Authentication flow (proving who you are)
-```
-POST /api/auth/login {email, password}
-  → look up admin by email (generic error if not found — no user enumeration)
-  → check locked_until (account lockout)
-  → bcrypt.compare(password, password_hash)
-  → wrong: increment failed_attempts, maybe lock account, generic error
-  → right: reset failed_attempts, sign JWT {sub: id, username}, set HttpOnly cookie
+```bash
+npm run dev          # nodemon, auto-restarts on file changes
+# or
+npm start             # plain node, no auto-restart
 ```
 
-### Authorization flow (proving you're allowed to do this)
-Authentication answers "who are you"; authorization answers "are you allowed to do this." Here they're nearly the same thing because there's only one role (`admin`) — passing `authenticateAdmin` (proving the token is valid and the account still exists) is sufficient authorization for every protected route. `requireAdmin` exists as a separate, explicit step specifically so that if a second role were introduced later (e.g. `viewer` who can see the dashboard but not delete URLs), the authorization check has a dedicated place to grow into (`requireAdmin(['superadmin'])`) without re-plumbing every route.
+Visit `http://localhost:3000`. Admin dashboard: `http://localhost:3000/login` (credentials from `ADMIN_EMAIL`/`ADMIN_PASSWORD`).
 
-### Cookie lifecycle
-1. **Set**: on successful login, `Set-Cookie: admin_token=<jwt>; HttpOnly; SameSite=Lax; [Secure;] [Max-Age=7200]`.
-2. **Sent**: the browser automatically attaches it to every same-site request to this origin — no client JS needed.
-3. **Verified**: `verifyJWT` middleware checks the signature and expiry on every protected request.
-4. **Expires**: naturally after 2 hours (the JWT's own `exp` claim) — no server-side state to clean up.
-5. **Cleared**: explicitly on logout (`res.clearCookie`), or implicitly by the browser if it was a session-only cookie (unchecked "Remember me") and the browser closes.
+## Deployment
 
-### Security best practices demonstrated here
-- Generic "Invalid email or password" on login failure (never reveal *which* field was wrong).
-- Password hashes never appear in any API response (`toPublicAdmin()` strips it before the object ever leaves the service layer).
-- Defense in depth on brute force: per-account lockout **and** per-IP rate limiting are two independent mechanisms.
-- Minimal JWT payload (`sub`, `username` only) — no sensitive data embedded in a token that's technically decodable (not just verifiable) by anyone who has it.
-- Every mutation the audit log covers is logged with *who* (when known), *from where* (IP/UA), and *when* — not just *that* it happened.
+Deployed on **Railway** — app and managed MySQL as two services in one project, source-connected to `main` for continuous deployment. Full guide, diagram, and reproducible CLI steps: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
 
-### Common interview questions (with answers)
+## API Documentation
 
-**Q: If a JWT is stored in an HttpOnly cookie, how does the frontend JavaScript know if the user is logged in?**
-A: It doesn't read the cookie directly — it can't. Instead it calls an endpoint like `GET /api/auth/me`; the browser attaches the cookie automatically, the server verifies it, and the response (200 + admin info, or 401) tells the frontend the auth state.
+Full endpoint reference with request/response examples: **[docs/API.md](docs/API.md)**.
 
-**Q: What stops someone from just copying the JWT cookie value and using it elsewhere?**
-A: Nothing about JWT itself — this is a real limitation, not solved by this design. `HttpOnly` stops *JavaScript* from reading it (defeats XSS-based theft), and `Secure` stops it being sent over plaintext HTTP (defeats network sniffing), but if someone has physical/direct access to the cookie store, it's usable until it expires. The 2-hour expiry bounds the damage window.
+**Quick reference:**
 
-**Q: Why hash passwords instead of encrypting them?**
-A: Encryption is reversible (there's a key to decrypt with) — hashing is designed to be one-way. You never need to recover the original password, only verify a guess against the stored hash, so a one-way function is strictly the correct tool, and it means even the application itself can't leak plaintext passwords because it never has them after registration/hashing.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/url` | Public | Create a short URL |
+| GET | `/:shortCode` | Public | Redirect to the original URL |
+| GET | `/api/url/:shortCode/qrcode` | Public | Get a QR code |
+| POST | `/api/auth/login` | Public | Admin login |
+| POST | `/api/auth/forgot-password` | Public | Request an OTP reset code |
+| PUT | `/api/url/:id` | 🔒 | Update a URL |
+| DELETE | `/api/url/:id` | 🔒 | Soft-delete a URL |
+| GET | `/api/admin/dashboard` | 🔒 | Aggregate stats + analytics + cache stats |
 
-**Q: Why increment `failed_attempts` in the database instead of just relying on the rate limiter?**
-A: The rate limiter is per-IP; the lockout is per-account. An attacker with access to many IPs (a botnet, proxy rotation) can bypass a per-IP limiter entirely while still hammering one specific account — the account-level lockout stops that regardless of how many IPs are involved.
+**Example:**
+```bash
+curl -X POST https://web-production-581a.up.railway.app/api/url \
+  -H "Content-Type: application/json" \
+  -d '{"longUrl": "https://example.com/some/very/long/path", "customAlias": "my-link"}'
+```
 
-**Q: Your JWT expires in 2 hours with no refresh token. What happens to a user mid-task when it expires?**
-A: Their next API call gets a `401` with `expired: true`; the shared frontend `apiRequest()` helper (or, for a page load, `errorHandler`'s redirect) sends them to `/login?expired=1`, which shows a "Session expired" toast. It's a deliberate simplicity trade-off for an admin tool used in short sessions — a consumer-facing product would more likely want a silent refresh-token flow instead of interrupting the user.
+## Admin Dashboard
+
+Protected (`/admin`) — search/sort/paginate every shortened URL, soft-delete/restore, and view live stat tiles (total URLs, total clicks, deleted, expired). Every mutation is written to the audit log (`admin_logs`).
+
+## Analytics Dashboard
+
+Protected (`/analytics`) — a Chart.js line chart of clicks over the last 14 days, a most-clicked-URLs table, and live LFU cache statistics (hit rate, size, evictions).
+
+## Authentication & Security
+
+Single-role JWT admin authentication — see the full technical write-up (auth flow diagrams, cookie security, brute-force defense-in-depth, injection defenses) in **[docs/SECURITY.md](docs/SECURITY.md)**, and the responsible-disclosure policy in **[SECURITY.md](SECURITY.md)**.
+
+**At a glance:**
+- Passwords hashed with **bcrypt** (12 salt rounds) — never stored or logged in plaintext.
+- JWT stored in an **`HttpOnly`, `Secure` (prod), `SameSite=Lax`** cookie — never `localStorage`.
+- **Per-account lockout** (5 failed attempts → 15 min) layered with **per-IP rate limiting**.
+- **Parameterized SQL** everywhere — no string-concatenated queries.
+- **Helmet, HPP, XSS sanitization, CORS** on every request.
+
+## LFU Cache
+
+A hand-built, from-scratch **O(1) Least-Frequently-Used cache** sits in front of MySQL for the redirect endpoint — no Redis. Full data-structure walkthrough, complexity analysis, LFU-vs-LRU comparison, and the production Redis migration path: **[docs/CACHE.md](docs/CACHE.md)**.
+
+```mermaid
+flowchart LR
+    A["GET /:shortCode"] --> B{In cache?}
+    B -- hit --> C[Serve from memory]
+    B -- miss --> D[Query MySQL] --> E[Populate cache] --> C
+    C --> F[302 redirect]
+```
+
+## QR Code Generation
+
+Every short URL gets an instantly generated QR code (`GET /api/url/:shortCode/qrcode`), returned as a base64 PNG data URL, generated with the [`qrcode`](https://www.npmjs.com/package/qrcode) package — shown automatically on the landing page right after shortening.
+
+## Logging
+
+Structured logging via Morgan (HTTP request logs) plus a custom logger (`src/utils/logger.js`) writing separate `logs/app.log`, `logs/error.log`, and `logs/request.log` files — each entry is a JSON line with a timestamp, level, message, and structured metadata.
+
+## Future Enhancements
+
+- [ ] Automated test suite (unit tests for the LFU cache and services, integration tests for the API)
+- [ ] Swap the in-process LFU cache for Redis to share cache state across multiple instances
+- [ ] Move click-event writes to a message queue, fully decoupling redirect latency from analytics
+- [ ] Refresh tokens / JWT revocation for true session invalidation
+- [ ] Multi-role admin system (`requireAdmin` is already structured to grow into role-based checks)
+- [ ] A visible audit-log page in the admin UI (data already captured in `admin_logs`)
+- [ ] A public `GET /healthz` liveness route so hosting platforms can run automated health checks
+- [ ] Read replica for MySQL to separate redirect (read) traffic from write traffic
+
+## FAQ
+
+**Why LFU instead of LRU or no cache at all?**
+URL shortener traffic is power-law distributed — a few links get most of the clicks. LFU keeps genuinely popular links resident even through short quiet periods, where LRU would evict them. Full reasoning in [docs/CACHE.md](docs/CACHE.md).
+
+**Why is the JWT in a cookie instead of `localStorage`?**
+`localStorage` is readable by any JavaScript on the page, including an XSS payload — a single XSS bug means the token is stolen. An `HttpOnly` cookie is invisible to JavaScript entirely. See [docs/SECURITY.md](docs/SECURITY.md).
+
+**Why doesn't the forgot-password email actually arrive in my inbox?**
+It's intentionally sent through **Ethereal**, a sandboxed test-SMTP service — not a real provider. This avoids exposing any real personal or team email credentials in a public repository, while still exercising a genuine SMTP send path. The response includes a preview link to view the "sent" email. See [docs/SECURITY.md](docs/SECURITY.md) for the full reasoning.
+
+**Why MySQL and not PostgreSQL/MongoDB?**
+The project spec called for MySQL specifically; the schema/queries are plain parameterized SQL with no ORM, so porting to PostgreSQL would mainly mean adjusting a handful of MySQL-specific syntax choices (e.g. `ON UPDATE CURRENT_TIMESTAMP`).
+
+**Is this using an ORM?**
+No — every query is hand-written in `src/models/*.model.js` using `mysql2`'s named-placeholder parameterized queries. This was a deliberate choice for learning/interview purposes: understanding exactly what SQL runs, when, and why.
+
+**Can I run this without MySQL, just to poke around the frontend?**
+Not currently — the app requires a live MySQL connection at startup (`server.js` verifies the connection before listening). Easiest path: use the [live demo](#live-demo) instead.
+
+## Contributing
+
+Contributions are welcome — see **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, code style, and PR guidelines. Please also read the **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+## Author
+
+**Aditya Thakur**
+GitHub: [@adityathakur-09](https://github.com/adityathakur-09)
+
+Built as a hands-on backend engineering project to go deep on system design fundamentals — layered architecture, caching strategy, authentication, and production security concerns — rather than just shipping a CRUD app.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
