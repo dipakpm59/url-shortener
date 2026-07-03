@@ -1,5 +1,7 @@
 # Snipr — Production-Grade URL Shortener
 
+**Live demo:** https://web-production-581a.up.railway.app — the shorten/redirect/QR-code flow is fully public; admin dashboard credentials available on request.
+
 A backend-focused URL shortener built with Node.js, Express, and MySQL — featuring a **hand-built LFU (Least Frequently Used) cache** in front of the database, click analytics, QR codes, URL expiry, soft delete, JWT-based admin authentication, and audited admin APIs. Built as a portfolio/interview-prep project demonstrating layered architecture, caching strategy, and production concerns (security, logging, error handling).
 
 ## Architecture
@@ -134,7 +136,7 @@ Token invalid/missing → for page routes (`/admin`, `/analytics`), the centrali
 | `GET /:shortCode` (redirect) | all of `/api/admin/*` |
 | `GET /api/url/:shortCode`, `.../qrcode` | `/api/auth/logout`, `/api/auth/me`, `/api/auth/change-password` |
 
-> **Deliberate deviation from a fully literal reading of "everything else redirects to login":** the QR-code-after-shorten step is part of the existing *public* landing-page flow (an anonymous visitor shortens a URL and immediately sees its QR code on the same page). Locking that down would have broken an existing feature, so URL creation, redirect, metadata lookup, and QR code generation stay public; only administrative mutations (update/delete/restore) and the `/api/admin/*` surface require login. Similarly, `render.yaml`'s `healthCheckPath` was pointed away from `/health` since it's now behind auth and Render's health-checker doesn't have an admin session — see the comment in `render.yaml`.
+> **Deliberate deviation from a fully literal reading of "everything else redirects to login":** the QR-code-after-shorten step is part of the existing *public* landing-page flow (an anonymous visitor shortens a URL and immediately sees its QR code on the same page). Locking that down would have broken an existing feature, so URL creation, redirect, metadata lookup, and QR code generation stay public; only administrative mutations (update/delete/restore) and the `/api/admin/*` surface require login. One consequence: `/health` is also behind auth, so it can no longer serve as an infrastructure health-check endpoint without a session — see the note under [Deployment](#deployment-railway).
 
 **Cookie configuration** (`src/controllers/auth.controller.js`):
 - `httpOnly: true` — inaccessible to JavaScript (`document.cookie` can't read it), which is what actually defeats token-stealing XSS.
@@ -271,9 +273,43 @@ See `.env.example` for the full list — key ones:
 - **Per-account login lockout** (5 failed attempts → 15 min lock) layered with a **per-IP rate limiter** on `/api/auth/login`.
 - **Audit logging** of every security-relevant admin action (`admin_logs` table).
 
-## Deployment (Render)
+## Deployment (Railway)
 
-See `render.yaml`. In short: push to GitHub, create a new Web Service on Render pointing at this repo, and add a managed MySQL database (Render or an external provider like PlanetScale), setting the `DB_*` environment variables in the Render dashboard.
+Live at **https://web-production-581a.up.railway.app**.
+
+Deployed as two services in one Railway project:
+- **`web`** — this app, source-connected to the `main` branch of this GitHub repo (pushes to `main` auto-deploy).
+- **`MySQL`** — a managed MySQL instance in the same project, reached over Railway's private network (`mysql.railway.internal`) so traffic between the app and DB never leaves Railway's internal network.
+
+**To reproduce this deployment yourself:**
+```bash
+railway login
+railway init --name your-project-name
+railway add --database mysql
+railway add --service web
+railway service source connect --repo <you>/<your-repo> --branch main --service web
+railway domain --service web --port 3000   # generates a public URL
+
+# Point the app at the MySQL service using Railway's cross-service variable
+# references (auto-updates if the DB's credentials ever change):
+railway variable set 'DB_HOST=${{MySQL.MYSQLHOST}}' --service web
+railway variable set 'DB_PORT=${{MySQL.MYSQLPORT}}' --service web
+railway variable set 'DB_USER=${{MySQL.MYSQLUSER}}' --service web
+railway variable set 'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}' --service web
+railway variable set 'DB_NAME=${{MySQL.MYSQLDATABASE}}' --service web
+# ...plus JWT_SECRET, BASE_URL, CORS_ORIGIN, ADMIN_*, etc. — see .env.example
+# for the full list.
+
+# One-time schema + admin setup, run locally against the DB's public proxy
+# (find the public host/port with `railway variable list --service MySQL --kv`,
+# under MYSQL_PUBLIC_URL):
+DB_HOST=<proxy-host> DB_PORT=<proxy-port> DB_USER=root DB_PASSWORD=<...> DB_NAME=railway \
+  node src/scripts/initDb.js
+DB_HOST=<proxy-host> DB_PORT=<proxy-port> DB_USER=root DB_PASSWORD=<...> DB_NAME=railway \
+  node src/scripts/seedAdmin.js
+```
+
+**Note:** `/health` now sits behind admin auth (see [Authentication](#authentication)), so it isn't wired up as an automated infra health check here — Railway is currently just checking that the process responds on its port. See [Future Improvements](#future-improvements) for adding back a dedicated public liveness route.
 
 ## Future Improvements
 
@@ -283,7 +319,7 @@ See `render.yaml`. In short: push to GitHub, create a new Web Service on Render 
 - Refresh tokens / token rotation, so a stolen-but-unexpired JWT has a shorter usable window than a full 2 hours.
 - A real role system (`requireAdmin` is already structured to grow into `requireAdmin(['superadmin'])`-style role checks).
 - A visible audit log page in the admin UI (the data is already captured in `admin_logs`, just not surfaced yet).
-- A small unauthenticated `GET /healthz` liveness route so `render.yaml` can restore an automated health check without exposing the detailed `/health` diagnostics publicly.
+- A small unauthenticated `GET /healthz` liveness route so hosting platforms can run an automated health check without exposing the detailed `/health` diagnostics publicly.
 
 ## Interview Prep
 
