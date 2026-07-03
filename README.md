@@ -74,15 +74,17 @@ The shorten → redirect → QR code flow is fully public — try it right now, 
 
 ## Screenshots
 
-> Real screenshots aren't checked in yet — see [`docs/screenshots/`](docs/screenshots/) for instructions on adding them. Meanwhile, the [live demo](#live-demo) is the fastest way to see it running.
-
-| Landing Page | Admin Dashboard |
+| Landing Page | Features |
 |---|---|
-| *(screenshot placeholder — see [live demo](#live-demo))* | *(screenshot placeholder — see [live demo](#live-demo))* |
+| ![Landing page](docs/screenshots/landing.png) | ![Features section](docs/screenshots/features.png) |
 
-| Analytics Dashboard | Login Page |
+| Admin Dashboard | Analytics Dashboard |
 |---|---|
-| *(screenshot placeholder — see [live demo](#live-demo))* | *(screenshot placeholder — see [live demo](#live-demo))* |
+| ![Admin dashboard](docs/screenshots/admin-dashboard.png) | ![Analytics dashboard](docs/screenshots/analytics-dashboard.png) |
+
+| Login Page |
+|---|
+| ![Login page](docs/screenshots/login.png) |
 
 ## Architecture
 

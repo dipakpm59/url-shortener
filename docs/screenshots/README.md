@@ -1,15 +1,15 @@
 # Screenshots
 
-Real screenshots aren't checked in yet — the placeholders in the main [README](../../README.md#screenshots) stand in for now. To add real ones:
+Current screenshots, embedded in the main [README](../../README.md#screenshots):
 
-1. Run the app locally (`npm run dev`) or use the [live demo](../../README.md#live-demo).
-2. Capture:
-   - `landing.png` — the landing page with the shorten form
-   - `result.png` — the result card (short URL + QR code) after shortening
-   - `admin-dashboard.png` — the admin dashboard (stat tiles + URL table)
-   - `analytics-dashboard.png` — the analytics dashboard (clicks-over-time chart)
-   - `login.png` — the login page
-3. Save them in this folder using the filenames above.
-4. Replace the placeholder image links in the main README's [Screenshots](../../README.md#screenshots) section with `docs/screenshots/<filename>.png`.
+| File | Shows |
+|---|---|
+| `landing.png` | Landing page — hero + shorten form |
+| `features.png` | Landing page — features section |
+| `admin-dashboard.png` | Admin dashboard — stat tiles + URL table |
+| `analytics-dashboard.png` | Analytics dashboard — clicks-over-time + LFU cache stats |
+| `login.png` | Login page |
 
-Keep screenshots reasonably sized (compress PNGs) so the repo doesn't bloat with binary assets.
+To update any of these: capture a new screenshot (locally via `npm run dev`, or from the [live demo](../../README.md#live-demo)), overwrite the corresponding file in this folder with the same filename, then commit — the README already references these paths, so no other changes are needed.
+
+Missing: a screenshot of the shorten-result card (short URL + QR code shown right after creating a link). Add one as `result.png` and reference it in the main README's Screenshots section if you'd like full coverage.
