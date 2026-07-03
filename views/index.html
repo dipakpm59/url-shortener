@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Snipr — Fast, Reliable URL Shortener</title>
+<meta name="description" content="Shorten long URLs instantly with click analytics, QR codes, and custom aliases." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-glass sticky-top py-3">
+  <div class="container">
+    <a class="navbar-brand fs-4 brand-mark" href="/"><i class="bi bi-link-45deg"></i> Snipr</a>
+    <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <i class="bi bi-list fs-2"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <li class="nav-item"><a class="nav-link text-muted-soft" href="/#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link text-muted-soft" href="/analytics">Analytics</a></li>
+        <li class="nav-item"><a class="btn btn-outline-brand btn-sm ms-lg-2" href="/admin"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<header class="hero-bg py-5 py-md-6">
+  <div class="hero-orb one"></div>
+  <div class="hero-orb two"></div>
+  <div class="container position-relative" style="z-index:1;">
+    <div class="row justify-content-center text-center py-4 py-md-5">
+      <div class="col-lg-8">
+        <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-lightning-charge-fill me-1"></i>Backed by a custom LFU cache</span>
+        <h1 class="display-4 fw-800 mb-3" style="font-weight:800; letter-spacing:-0.03em;">
+          Shorten links. <span class="brand-mark">Track everything.</span>
+        </h1>
+        <p class="fs-5 text-muted-soft mb-4">
+          Production-grade URL shortening with custom aliases, QR codes, and real-time click analytics.
+        </p>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="glass-card p-4 p-md-5">
+          <form id="shorten-form" novalidate>
+            <label class="form-label text-muted-soft small">Paste a long URL</label>
+            <div class="input-group input-group-lg mb-3">
+              <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-link-45deg text-muted-soft"></i></span>
+              <input type="url" class="form-control form-control-dark" id="long-url" placeholder="https://example.com/a/very/long/path" required>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label text-muted-soft small">Custom alias (optional)</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent form-control-dark border-end-0 text-muted-soft">snipr.app/</span>
+                  <input type="text" class="form-control form-control-dark border-start-0" id="custom-alias" placeholder="my-brand" maxlength="20">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted-soft small">Expires on (optional)</label>
+                <input type="date" class="form-control form-control-dark" id="expires-at">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-brand btn-lg w-100" id="shorten-btn">
+              <span class="btn-label"><i class="bi bi-magic me-1"></i> Shorten URL</span>
+            </button>
+          </form>
+
+          <div id="result-section" class="mt-4 d-none">
+            <hr class="divider">
+            <div class="row g-4 align-items-center">
+              <div class="col-md-8">
+                <div class="small text-muted-soft mb-1">Your short URL</div>
+                <div class="copy-row mb-3">
+                  <input type="text" id="short-url-output" readonly>
+                  <button class="btn btn-brand btn-sm" id="copy-btn"><i class="bi bi-clipboard me-1"></i>Copy</button>
+                </div>
+                <div class="small text-muted-soft mb-1">Original URL</div>
+                <div class="mono small text-truncate" id="original-url-output" style="color:var(--color-muted);"></div>
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                  <a href="/analytics" class="btn btn-outline-brand btn-sm"><i class="bi bi-graph-up me-1"></i>View Analytics</a>
+                  <a href="/admin" class="btn btn-outline-brand btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                </div>
+              </div>
+              <div class="col-md-4 text-center">
+                <div class="glass-card p-3 d-inline-block">
+                  <img id="qr-image" src="" alt="QR Code" width="140" height="140" class="d-none">
+                  <div id="qr-skeleton" class="skeleton" style="width:140px;height:140px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="container py-5" id="features">
+  <div class="row text-center mb-5">
+    <div class="col-lg-6 mx-auto">
+      <h2 class="fw-bold mb-2">Everything you'd expect from a real product</h2>
+      <p class="text-muted-soft">Built with the same concerns as a production system — not a toy CRUD app.</p>
+    </div>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <a href="/analytics" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-lightning-charge-fill text-warning"></i></div>
+          <h5 class="fw-bold">Custom LFU Cache <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Hand-built Least-Frequently-Used cache sits in front of MySQL, cutting redirect latency and DB load for hot links. See live cache stats &rarr;</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="#shorten-form" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-qr-code text-info"></i></div>
+          <h5 class="fw-bold">QR Codes <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Every short link ships with an instantly generated, downloadable QR code. Try it above &rarr;</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="/analytics" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-graph-up-arrow text-success"></i></div>
+          <h5 class="fw-bold">Real Analytics <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Click counts, last-accessed timestamps, and clicks-over-time — all queryable via REST APIs. View dashboard &rarr;</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="/health" target="_blank" rel="noopener" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-shield-lock-fill text-primary"></i></div>
+          <h5 class="fw-bold">Hardened Security <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Helmet, rate limiting, HPP, XSS sanitization, and parameterized SQL by default. Check system status &rarr;</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="/admin" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-clock-history text-danger"></i></div>
+          <h5 class="fw-bold">Expiry &amp; Soft Delete <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Links can expire automatically or be soft-deleted and restored without losing history. Manage in admin &rarr;</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="/health" target="_blank" rel="noopener" class="feature-card-link">
+        <div class="glass-card hover-lift p-4 h-100">
+          <div class="fs-2 mb-2"><i class="bi bi-diagram-3-fill" style="color:var(--color-accent);"></i></div>
+          <h5 class="fw-bold">Clean Architecture <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Layered MVC + Service pattern: routes, controllers, services, models — each with a single responsibility. Check system status &rarr;</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer py-4 mt-4">
+  <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+    <div><span class="brand-mark fw-bold">Snipr</span> · Built as a backend engineering portfolio project</div>
+    <div class="d-flex gap-3">
+      <a href="/admin" class="text-muted-soft">Admin</a>
+      <a href="/analytics" class="text-muted-soft">Analytics</a>
+      <a href="/health" class="text-muted-soft">Status</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/components.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

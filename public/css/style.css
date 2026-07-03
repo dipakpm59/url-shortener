@@ -1,0 +1,255 @@
+:root {
+  --color-primary: #6366F1;
+  --color-secondary: #8B5CF6;
+  --color-accent: #06B6D4;
+  --color-bg: #0F172A;
+  --color-card: #1E293B;
+  --color-card-hover: #24324a;
+  --color-text: #F8FAFC;
+  --color-muted: #94A3B8;
+  --color-border: rgba(148, 163, 184, 0.15);
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px rgba(99, 102, 241, 0.25), 0 8px 30px rgba(99, 102, 241, 0.15);
+
+  --gradient-brand: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-primary));
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: radial-gradient(circle at 20% -10%, rgba(99, 102, 241, 0.20), transparent 40%),
+              radial-gradient(circle at 90% 10%, rgba(6, 182, 212, 0.12), transparent 35%),
+              var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-primary); }
+
+::selection { background: var(--color-primary); color: white; }
+
+/* ---------- Layout shells ---------- */
+.navbar-glass {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand-mark {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.footer {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Glass cards ---------- */
+.glass-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* Wraps clickable feature cards without breaking the card's own visual styling. */
+.feature-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  height: 100%;
+}
+.feature-card-link:hover { color: inherit; }
+.feature-card-link .bi-arrow-up-right { opacity: 0.6; }
+
+/* ---------- Hero ---------- */
+.hero-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  z-index: 0;
+  animation: float 12s ease-in-out infinite;
+}
+
+.hero-orb.one { width: 320px; height: 320px; background: var(--color-primary); top: -80px; left: -60px; }
+.hero-orb.two { width: 260px; height: 260px; background: var(--color-accent); bottom: -60px; right: -40px; animation-delay: -4s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-25px) translateX(15px); }
+}
+
+/* ---------- Buttons ---------- */
+.btn-brand {
+  background: var(--gradient-brand);
+  border: none;
+  color: white;
+  font-weight: 600;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+.btn-brand:hover { filter: brightness(1.1); color: white; transform: translateY(-1px); }
+.btn-brand:disabled { opacity: 0.6; transform: none; }
+
+.btn-outline-brand {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  background: transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.btn-outline-brand:hover { border-color: var(--color-primary); background: rgba(99, 102, 241, 0.08); color: var(--color-text); }
+
+/* ---------- Form controls ---------- */
+.form-control-dark, .form-select-dark {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+}
+.form-control-dark:focus, .form-select-dark:focus {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  color: var(--color-text);
+}
+.form-control-dark::placeholder { color: var(--color-muted); }
+
+/* ---------- Stat tiles ---------- */
+.stat-tile { border-radius: var(--radius-md); padding: 1.25rem 1.5rem; }
+.stat-value { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; }
+.stat-label { color: var(--color-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ---------- Badges ---------- */
+.badge-soft { background: rgba(99, 102, 241, 0.15); color: #C7D2FE; border-radius: 999px; padding: 0.35em 0.8em; font-weight: 600; }
+
+/* ---------- Result / copy row ---------- */
+.copy-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+}
+.copy-row input { background: transparent; border: none; color: var(--color-accent); font-weight: 600; flex: 1; outline: none; }
+
+/* ---------- Toasts ---------- */
+.toast-container { z-index: 1080; }
+
+/* ---------- Skeleton loader ---------- */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.04) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ---------- Animated form validation ---------- */
+.is-invalid-shake { animation: shake 0.4s ease; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+/* ---------- Spinner ---------- */
+.spinner-brand {
+  width: 1.1rem; height: 1.1rem;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Table ---------- */
+.table-dark-custom { color: var(--color-text); border-color: var(--color-border); }
+.table-dark-custom th { color: var(--color-muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; border-color: var(--color-border); }
+.table-dark-custom td { border-color: var(--color-border); vertical-align: middle; }
+.table-row-hover:hover { background: rgba(255,255,255,0.02); }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  background: var(--color-card);
+  border-right: 1px solid var(--color-border);
+  min-height: 100vh;
+}
+.sidebar .nav-link {
+  color: var(--color-muted);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  padding: 0.6rem 0.9rem;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--color-text);
+}
+
+/* ---------- Dropdown / modal (profile menu, change password) ---------- */
+.dropdown-menu-custom {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.dropdown-menu-custom .dropdown-item { color: var(--color-text); }
+.dropdown-menu-custom .dropdown-item:hover,
+.dropdown-menu-custom .dropdown-item:focus { background: rgba(99, 102, 241, 0.12); color: var(--color-text); }
+.dropdown-menu-custom .dropdown-divider { border-color: var(--color-border); }
+
+.modal-content-dark {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state { color: var(--color-muted); padding: 3rem 1rem; text-align: center; }
+
+/* ---------- Misc ---------- */
+.text-muted-soft { color: var(--color-muted) !important; }
+.divider { border-color: var(--color-border); }
+.mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+
+@media (max-width: 767.98px) {
+  .sidebar { min-height: auto; }
+}
