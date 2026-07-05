@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Snipr — Fast, Reliable URL Shortener</title>
-<meta name="description" content="Shorten long URLs instantly with click analytics, QR codes, and custom aliases." />
+<meta name="description" content="Shorten long URLs instantly with click analytics and QR codes." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>" />
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -22,6 +22,7 @@
       <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
         <li class="nav-item"><a class="nav-link text-muted-soft" href="/#features">Features</a></li>
         <li class="nav-item"><a class="nav-link text-muted-soft" href="/analytics">Analytics</a></li>
+        <li class="nav-item"><a class="nav-link text-muted-soft" href="/account"><i class="bi bi-person-circle me-1"></i>Login / Sign up</a></li>
         <li class="nav-item"><a class="btn btn-outline-brand btn-sm ms-lg-2" href="/admin"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
       </ul>
     </div>
@@ -39,7 +40,7 @@
           Shorten links. <span class="brand-mark">Track everything.</span>
         </h1>
         <p class="fs-5 text-muted-soft mb-4">
-          Production-grade URL shortening with custom aliases, QR codes, and real-time click analytics.
+          Production-grade URL shortening with QR codes and real-time click analytics.
         </p>
       </div>
     </div>
@@ -55,14 +56,7 @@
             </div>
 
             <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label class="form-label text-muted-soft small">Custom alias (optional)</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-transparent form-control-dark border-end-0 text-muted-soft">snipr.app/</span>
-                  <input type="text" class="form-control form-control-dark border-start-0" id="custom-alias" placeholder="my-brand" maxlength="20">
-                </div>
-              </div>
-              <div class="col-md-6">
+              <div class="col-12">
                 <label class="form-label text-muted-soft small">Expires on (optional)</label>
                 <input type="date" class="form-control form-control-dark" id="expires-at">
               </div>

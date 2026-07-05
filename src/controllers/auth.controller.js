@@ -2,8 +2,6 @@ const authService = require('../services/auth.service');
 const {
   validateLoginPayload,
   validateChangePasswordPayload,
-  validateForgotPasswordPayload,
-  validateResetPasswordPayload,
 } = require('../validators/auth.validator');
 const asyncHandler = require('../utils/asyncHandler');
 const httpStatus = require('../constants/httpStatus');
@@ -27,9 +25,9 @@ function setAuthCookie(res, token, rememberMe) {
 
 const login = asyncHandler(async (req, res) => {
   validateLoginPayload(req.body);
-  const { email, password, rememberMe } = req.body;
+  const { identifier, password, rememberMe } = req.body;
 
-  const { token, admin } = await authService.login({ email, password, ...requestMeta(req) });
+  const { token, admin } = await authService.login({ identifier, password, ...requestMeta(req) });
   setAuthCookie(res, token, Boolean(rememberMe));
 
   res.status(httpStatus.OK).json({ success: true, message: 'Login successful.', data: { admin } });
@@ -61,19 +59,4 @@ const changePassword = asyncHandler(async (req, res) => {
   res.status(httpStatus.OK).json({ success: true, message: 'Password changed successfully.' });
 });
 
-const forgotPassword = asyncHandler(async (req, res) => {
-  validateForgotPasswordPayload(req.body);
-  const { message, previewUrl } = await authService.requestPasswordReset({ email: req.body.email, ...requestMeta(req) });
-  res.status(httpStatus.OK).json({ success: true, message, ...(previewUrl ? { data: { previewUrl } } : {}) });
-});
-
-const resetPassword = asyncHandler(async (req, res) => {
-  validateResetPasswordPayload(req.body);
-  const { email, otp, newPassword } = req.body;
-
-  await authService.resetPasswordWithOtp({ email, otp, newPassword, ...requestMeta(req) });
-
-  res.status(httpStatus.OK).json({ success: true, message: 'Password reset successfully. You can now log in.' });
-});
-
-module.exports = { login, logout, me, changePassword, forgotPassword, resetPassword };
+module.exports = { login, logout, me, changePassword };

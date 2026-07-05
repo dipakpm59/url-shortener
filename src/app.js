@@ -51,6 +51,9 @@ app.get('/', (req, res) => {
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'login.html'));
 });
+app.get('/account', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'account.html'));
+});
 app.get('/admin', verifyJWT, authenticateAdmin, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
 });

@@ -39,9 +39,8 @@
     clearInvalid(emailInput, emailError);
     clearInvalid(passwordInput, passwordError);
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(emailInput.value.trim())) {
-      markInvalid(emailInput, emailError, 'Enter a valid email address.');
+    if (!emailInput.value.trim()) {
+      markInvalid(emailInput, emailError, 'Enter your email or username.');
       valid = false;
     }
     if (!passwordInput.value) {
@@ -60,7 +59,7 @@
       await apiRequest('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({
-          email: emailInput.value.trim(),
+          identifier: emailInput.value.trim(),
           password: passwordInput.value,
           rememberMe: rememberMeCheckbox.checked,
         }),
@@ -71,102 +70,5 @@
       showToast(err.message, 'danger');
       setButtonLoading(loginBtn, false);
     }
-  });
-
-  // --- Forgot password (two-step: request code -> verify + set new password) ---
-  const forgotModalEl = document.getElementById('forgotPasswordModal');
-  const step1Form = document.getElementById('forgot-step1-form');
-  const step2Form = document.getElementById('forgot-step2-form');
-  const forgotEmailInput = document.getElementById('forgot-email');
-  const forgotEmailDisplay = document.getElementById('forgot-email-display');
-  const step1Btn = document.getElementById('forgot-step1-btn');
-  const step2Btn = document.getElementById('forgot-step2-btn');
-  const resendBtn = document.getElementById('resend-otp-btn');
-  const otpInput = document.getElementById('otp-input');
-  const newPasswordInput = document.getElementById('reset-new-password');
-  const confirmPasswordInput = document.getElementById('reset-confirm-password');
-  const previewUrlWrap = document.getElementById('preview-url-wrap');
-  const previewUrlLink = document.getElementById('preview-url-link');
-  const PASSWORD_COMPLEXITY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-  async function requestOtp(button) {
-    const email = forgotEmailInput.value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showToast('Enter a valid email address.', 'danger');
-      return;
-    }
-
-    setButtonLoading(button, true, 'Sending...');
-    try {
-      const { message, data } = await apiRequest('/api/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
-      showToast(message, 'success');
-
-      if (data?.previewUrl) {
-        previewUrlLink.href = data.previewUrl;
-        previewUrlWrap.classList.remove('d-none');
-      }
-
-      forgotEmailDisplay.textContent = email;
-      step1Form.classList.add('d-none');
-      step2Form.classList.remove('d-none');
-    } catch (err) {
-      showToast(err.message, 'danger');
-    } finally {
-      setButtonLoading(button, false);
-    }
-  }
-
-  step1Form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    requestOtp(step1Btn);
-  });
-
-  resendBtn.addEventListener('click', () => requestOtp(resendBtn));
-
-  step2Form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const otp = otpInput.value.trim();
-    const newPassword = newPasswordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
-
-    if (!/^\d{6}$/.test(otp)) {
-      showToast('Enter the 6-digit code.', 'danger');
-      return;
-    }
-    if (!PASSWORD_COMPLEXITY_REGEX.test(newPassword)) {
-      showToast('New password must be 8+ characters with uppercase, lowercase, a number, and a special character.', 'danger');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showToast('New password and confirmation do not match.', 'danger');
-      return;
-    }
-
-    setButtonLoading(step2Btn, true, 'Resetting...');
-    try {
-      await apiRequest('/api/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: forgotEmailInput.value.trim(), otp, newPassword, confirmPassword }),
-      });
-      showToast('Password reset. You can now log in.', 'success');
-      bootstrap.Modal.getInstance(forgotModalEl)?.hide();
-    } catch (err) {
-      showToast(err.message, 'danger');
-    } finally {
-      setButtonLoading(step2Btn, false);
-    }
-  });
-
-  // Reset the modal back to step 1 each time it's opened/closed, so a
-  // second forgot-password attempt doesn't reuse stale state.
-  forgotModalEl.addEventListener('hidden.bs.modal', () => {
-    step1Form.reset();
-    step2Form.reset();
-    step1Form.classList.remove('d-none');
-    step2Form.classList.add('d-none');
-    previewUrlWrap.classList.add('d-none');
   });
 })();

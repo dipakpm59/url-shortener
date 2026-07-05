@@ -21,4 +21,24 @@ async function getDashboardSummary() {
   };
 }
 
-module.exports = { getDashboardSummary };
+// Same shape as getDashboardSummary, scoped to one user's own links. No
+// cacheStats here — the LFU cache is shared/global infrastructure, not a
+// meaningful per-user metric.
+async function getUserDashboardSummary(userId) {
+  const totals = await urlModel.countAllByOwnerUser(userId);
+  const mostClicked = await urlModel.mostClickedByOwnerUser(userId, 10);
+  const clicksOverTime = await clickEventModel.clicksOverTimeByOwnerUser(userId, 14);
+
+  return {
+    totals: {
+      totalUrls: Number(totals.totalUrls) || 0,
+      totalClicks: Number(totals.totalClicks) || 0,
+      deletedUrls: Number(totals.deletedUrls) || 0,
+      expiredUrls: Number(totals.expiredUrls) || 0,
+    },
+    mostClicked,
+    clicksOverTime,
+  };
+}
+
+module.exports = { getDashboardSummary, getUserDashboardSummary };

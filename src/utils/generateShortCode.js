@@ -1,13 +1,15 @@
-const { customAlphabet } = require('nanoid');
-const env = require('../config/env');
+const crypto = require('crypto');
 
-// Alphanumeric, no ambiguous-looking characters (0/O, 1/l/I) removed for readability.
-const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-const nanoid = customAlphabet(ALPHABET, env.url.shortCodeLength);
+// Full Base62 alphabet (A-Z, a-z, 0-9) — no characters excluded.
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const SHORT_CODE_LENGTH = 10;
 
 function generateShortCode() {
-  return nanoid();
+  let code = '';
+  for (let i = 0; i < SHORT_CODE_LENGTH; i += 1) {
+    code += ALPHABET[crypto.randomInt(ALPHABET.length)];
+  }
+  return code;
 }
 
 module.exports = generateShortCode;

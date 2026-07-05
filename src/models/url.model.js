@@ -1,11 +1,11 @@
 const { pool } = require('../config/db');
 
 const urlModel = {
-  async create({ longUrl, longUrlHash, shortCode, isCustomAlias, expiresAt }) {
+  async create({ longUrl, longUrlHash, shortCode, expiresAt, ownerAdminId, ownerUserId }) {
     const [result] = await pool.query(
-      `INSERT INTO urls (long_url, long_url_hash, short_code, is_custom_alias, expires_at)
-       VALUES (:longUrl, :longUrlHash, :shortCode, :isCustomAlias, :expiresAt)`,
-      { longUrl, longUrlHash, shortCode, isCustomAlias, expiresAt }
+      `INSERT INTO urls (owner_admin_id, owner_user_id, long_url, long_url_hash, short_code, expires_at)
+       VALUES (:ownerAdminId, :ownerUserId, :longUrl, :longUrlHash, :shortCode, :expiresAt)`,
+      { ownerAdminId: ownerAdminId ?? null, ownerUserId: ownerUserId ?? null, longUrl, longUrlHash, shortCode, expiresAt }
     );
     return this.findById(result.insertId);
   },
@@ -28,14 +28,21 @@ const urlModel = {
     return rows[0] || null;
   },
 
-  async findExistingByHash(longUrlHash) {
+  // Scoped to the same owner — now that urls are owned, "have I already
+  // shortened this URL" must mean the same caller, not anyone globally.
+  // Otherwise one user's link could get silently reused/returned to a
+  // different user who submits the same long URL, handing them a short
+  // code they don't own and that won't appear in their own url list.
+  async findExistingByHash(longUrlHash, { ownerAdminId, ownerUserId }) {
+    const ownerColumn = ownerAdminId != null ? 'owner_admin_id' : 'owner_user_id';
+    const ownerId = ownerAdminId != null ? ownerAdminId : ownerUserId;
     const [rows] = await pool.query(
       `SELECT * FROM urls
        WHERE long_url_hash = :longUrlHash
-         AND is_custom_alias = FALSE
+         AND ${ownerColumn} = :ownerId
          AND is_deleted = FALSE
        LIMIT 1`,
-      { longUrlHash }
+      { longUrlHash, ownerId }
     );
     return rows[0] || null;
   },
@@ -124,6 +131,58 @@ const urlModel = {
        ORDER BY click_count DESC
        LIMIT :limit`,
       { limit }
+    );
+    return rows;
+  },
+
+  // Backs the per-user daily creation cap. idx_owner_user_created makes
+  // this an index range scan rather than a table scan.
+  async countTodayByOwnerUser(userId) {
+    const [[{ count }]] = await pool.query(
+      `SELECT COUNT(*) AS count FROM urls
+       WHERE owner_user_id = :userId AND created_at >= CURDATE()`,
+      { userId }
+    );
+    return count;
+  },
+
+  async listByOwnerUser(userId, { limit, offset }) {
+    const [rows] = await pool.query(
+      `SELECT * FROM urls
+       WHERE owner_user_id = :userId
+       ORDER BY created_at DESC
+       LIMIT :limit OFFSET :offset`,
+      { userId, limit, offset }
+    );
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM urls WHERE owner_user_id = :userId`,
+      { userId }
+    );
+    return { rows, total };
+  },
+
+  // Same shape as countAll(), scoped to one user's own links.
+  async countAllByOwnerUser(userId) {
+    const [[row]] = await pool.query(
+      `SELECT
+         COUNT(*) AS totalUrls,
+         SUM(click_count) AS totalClicks,
+         SUM(CASE WHEN is_deleted THEN 1 ELSE 0 END) AS deletedUrls,
+         SUM(CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN 1 ELSE 0 END) AS expiredUrls
+       FROM urls WHERE owner_user_id = :userId`,
+      { userId }
+    );
+    return row;
+  },
+
+  async mostClickedByOwnerUser(userId, limit = 10) {
+    const [rows] = await pool.query(
+      `SELECT short_code, long_url, click_count, created_at
+       FROM urls
+       WHERE owner_user_id = :userId AND is_deleted = FALSE
+       ORDER BY click_count DESC
+       LIMIT :limit`,
+      { userId, limit }
     );
     return rows;
   },

@@ -37,6 +37,8 @@ module.exports = {
     defaultExpiryDays: process.env.DEFAULT_URL_EXPIRY_DAYS
       ? parseInt(process.env.DEFAULT_URL_EXPIRY_DAYS, 10)
       : null,
+    // Applies to role=USER only; admins are uncapped (see url.service.js).
+    dailyLimitPerUser: parseInt(process.env.DAILY_URL_LIMIT_PER_USER || '10', 10),
   },
 
   jwt: {
@@ -59,10 +61,6 @@ module.exports = {
     username: process.env.ADMIN_USERNAME || 'admin',
     email: process.env.ADMIN_EMAIL || 'admin@example.com',
     password: process.env.ADMIN_PASSWORD || 'Admin@123',
-  },
-
-  otp: {
-    expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '10', 10),
   },
 
   isProduction: (process.env.NODE_ENV || 'development') === 'production',

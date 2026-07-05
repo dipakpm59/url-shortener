@@ -13,4 +13,8 @@ router.get('/analytics', adminController.getAnalytics);
 router.get('/cache', adminController.getCacheStats);
 router.delete('/cache', adminController.clearCache);
 
+router.get('/users', adminController.listUsers);
+router.patch('/users/:id', adminController.updateUser);
+router.delete('/users/:id', adminController.deleteUser);
+
 module.exports = router;

@@ -9,9 +9,9 @@ const messages = require('../constants/messages');
 
 const createShortUrl = asyncHandler(async (req, res) => {
   validateCreateUrlPayload(req.body);
-  const { longUrl, customAlias, expiresAt } = req.body;
+  const { longUrl, expiresAt } = req.body;
 
-  const { data, reused } = await urlService.createShortUrl({ longUrl, customAlias, expiresAt });
+  const { data, reused } = await urlService.createShortUrl({ longUrl, expiresAt }, req.actor);
 
   res.status(reused ? httpStatus.OK : httpStatus.CREATED).json({
     success: true,

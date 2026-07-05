@@ -6,6 +6,14 @@ const adminModel = {
     return rows[0] || null;
   },
 
+  async findByEmailOrUsername(identifier) {
+    const [rows] = await pool.query(
+      `SELECT * FROM admins WHERE email = :identifier OR username = :identifier LIMIT 1`,
+      { identifier }
+    );
+    return rows[0] || null;
+  },
+
   async findById(id) {
     const [rows] = await pool.query(`SELECT * FROM admins WHERE id = :id LIMIT 1`, { id });
     return rows[0] || null;
@@ -47,19 +55,6 @@ const adminModel = {
     );
   },
 
-  async setResetOtp(id, otpHash, expiresAt) {
-    await pool.query(
-      `UPDATE admins SET reset_otp_hash = :otpHash, reset_otp_expires = :expiresAt WHERE id = :id`,
-      { id, otpHash, expiresAt }
-    );
-  },
-
-  async clearResetOtp(id) {
-    await pool.query(
-      `UPDATE admins SET reset_otp_hash = NULL, reset_otp_expires = NULL WHERE id = :id`,
-      { id }
-    );
-  },
 };
 
 module.exports = adminModel;

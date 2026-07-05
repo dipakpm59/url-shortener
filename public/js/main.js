@@ -1,7 +1,6 @@
 (() => {
   const form = document.getElementById('shorten-form');
   const longUrlInput = document.getElementById('long-url');
-  const aliasInput = document.getElementById('custom-alias');
   const expiresInput = document.getElementById('expires-at');
   const submitBtn = document.getElementById('shorten-btn');
   const resultSection = document.getElementById('result-section');
@@ -18,7 +17,6 @@
 
     try {
       const payload = { longUrl: longUrlInput.value.trim() };
-      if (aliasInput.value.trim()) payload.customAlias = aliasInput.value.trim();
       if (expiresInput.value) payload.expiresAt = new Date(expiresInput.value).toISOString();
 
       const { data } = await apiRequest('/api/url', {
