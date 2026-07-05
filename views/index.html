@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Snipr — Fast, Reliable URL Shortener</title>
-<meta name="description" content="Shorten long URLs instantly with click analytics and QR codes." />
+<title>Trimly | Production-Grade URL Shortener</title>
+<meta name="description" content="Secure URL shortening platform with authentication, QR codes, analytics, and custom LRU caching." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>" />
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-glass sticky-top py-3">
   <div class="container">
-    <a class="navbar-brand fs-4 brand-mark" href="/"><i class="bi bi-link-45deg"></i> Snipr</a>
+    <a class="navbar-brand fs-4 brand-mark" href="/"><i class="bi bi-link-45deg"></i> Trimly</a>
     <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
       <i class="bi bi-list fs-2"></i>
     </button>
@@ -22,8 +22,8 @@
       <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
         <li class="nav-item"><a class="nav-link text-muted-soft" href="/#features">Features</a></li>
         <li class="nav-item"><a class="nav-link text-muted-soft" href="/analytics">Analytics</a></li>
-        <li class="nav-item"><a class="nav-link text-muted-soft" href="/account"><i class="bi bi-person-circle me-1"></i>Login / Sign up</a></li>
-        <li class="nav-item"><a class="btn btn-outline-brand btn-sm ms-lg-2" href="/admin"><i class="bi bi-speedometer2 me-1"></i>Admin Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link text-muted-soft" href="/account"><i class="bi bi-person-circle me-1"></i>Login / Sign Up</a></li>
+        <li class="nav-item"><a class="btn btn-outline-brand btn-sm ms-lg-2" href="/admin"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
       </ul>
     </div>
   </div>
@@ -35,12 +35,12 @@
   <div class="container position-relative" style="z-index:1;">
     <div class="row justify-content-center text-center py-4 py-md-5">
       <div class="col-lg-8">
-        <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-lightning-charge-fill me-1"></i>Backed by a custom LFU cache</span>
+        <span class="badge-soft mb-3 d-inline-block"><i class="bi bi-lightning-charge-fill me-1"></i>Powered by a custom LRU cache</span>
         <h1 class="display-4 fw-800 mb-3" style="font-weight:800; letter-spacing:-0.03em;">
-          Shorten links. <span class="brand-mark">Track everything.</span>
+          Trim long URLs. <span class="brand-mark">Share smarter.</span>
         </h1>
         <p class="fs-5 text-muted-soft mb-4">
-          Production-grade URL shortening with QR codes and real-time click analytics.
+          Production-grade URL shortening with secure authentication, QR code generation, real-time analytics, and lightning-fast redirects powered by a custom LRU cache.
         </p>
       </div>
     </div>
@@ -109,8 +109,8 @@
       <a href="/analytics" class="feature-card-link">
         <div class="glass-card hover-lift p-4 h-100">
           <div class="fs-2 mb-2"><i class="bi bi-lightning-charge-fill text-warning"></i></div>
-          <h5 class="fw-bold">Custom LFU Cache <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
-          <p class="text-muted-soft small mb-0">Hand-built Least-Frequently-Used cache sits in front of MySQL, cutting redirect latency and DB load for hot links. See live cache stats &rarr;</p>
+          <h5 class="fw-bold">Custom LRU Cache <i class="bi bi-arrow-up-right small text-muted-soft"></i></h5>
+          <p class="text-muted-soft small mb-0">Hand-built Least-Recently-Used cache sits in front of MySQL, cutting redirect latency and DB load for hot links. See live cache stats &rarr;</p>
         </div>
       </a>
     </div>
@@ -164,7 +164,7 @@
 
 <footer class="footer py-4 mt-4">
   <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-    <div><span class="brand-mark fw-bold">Snipr</span> · Built as a backend engineering portfolio project</div>
+    <div><span class="brand-mark fw-bold">Trimly</span> · Built as a backend engineering portfolio project</div>
     <div class="d-flex gap-3">
       <a href="/admin" class="text-muted-soft">Admin</a>
       <a href="/analytics" class="text-muted-soft">Analytics</a>

@@ -54,7 +54,7 @@
     e.preventDefault();
     if (!validateForm()) return;
 
-    setButtonLoading(loginBtn, true, 'Signing in...');
+    setButtonLoading(loginBtn, true, 'Logging in...');
     try {
       await apiRequest('/api/auth/login', {
         method: 'POST',

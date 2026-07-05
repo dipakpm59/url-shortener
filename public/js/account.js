@@ -67,7 +67,7 @@
     }
     if (!valid) return;
 
-    setButtonLoading(loginBtn, true, 'Signing in...');
+    setButtonLoading(loginBtn, true, 'Logging in...');
     try {
       await apiRequest('/api/users/login', {
         method: 'POST',
@@ -129,7 +129,7 @@
 
     const newUsername = usernameInput.value.trim();
 
-    setButtonLoading(registerBtn, true, 'Creating account...');
+    setButtonLoading(registerBtn, true, 'Signing up...');
     try {
       await apiRequest('/api/users/register', {
         method: 'POST',
