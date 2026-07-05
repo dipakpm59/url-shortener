@@ -1,7 +1,6 @@
 const express = require('express');
 const urlRoutes = require('./url.routes');
 const adminRoutes = require('./admin.routes');
-const healthRoutes = require('./health.routes');
 const authRoutes = require('./auth.routes');
 const userRoutes = require('./user.routes');
 
@@ -11,6 +10,5 @@ router.use('/api/auth', authRoutes);
 router.use('/api/url', urlRoutes);
 router.use('/api/admin', adminRoutes);
 router.use('/api/users', userRoutes);
-router.use('/health', healthRoutes);
 
 module.exports = router;
