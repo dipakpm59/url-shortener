@@ -78,13 +78,17 @@ The shorten → redirect → QR code flow is fully public — try it right now, 
 |---|---|
 | ![Landing page](docs/screenshots/landing.png) | ![Features section](docs/screenshots/features.png) |
 
-| Admin Dashboard | Analytics Dashboard |
+| Shorten Result (short URL + QR) | Admin Dashboard |
 |---|---|
-| ![Admin dashboard](docs/screenshots/admin-dashboard.png) | ![Analytics dashboard](docs/screenshots/analytics-dashboard.png) |
+| ![Shorten result](docs/screenshots/result.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) |
 
-| Login Page |
+| Analytics Dashboard | Admin Login |
+|---|---|
+| ![Analytics dashboard](docs/screenshots/analytics-dashboard.png) | ![Admin login page](docs/screenshots/login.png) |
+
+| User Login / Sign Up |
 |---|
-| ![Login page](docs/screenshots/login.png) |
+| ![User login page](docs/screenshots/account.png) |
 
 ## Architecture
 
