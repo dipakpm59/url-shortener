@@ -51,7 +51,7 @@ railway variable set "BASE_URL=https://<your-generated-domain>" --service web
 railway variable set "CORS_ORIGIN=https://<your-generated-domain>" --service web
 railway variable set "JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" --service web
 # ... JWT_EXPIRES_IN, COOKIE_NAME, MAX_LOGIN_ATTEMPTS, LOCK_DURATION_MINUTES,
-#     ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, OTP_EXPIRY_MINUTES
+#     ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, DAILY_URL_LIMIT_PER_USER
 ```
 
 ## One-time schema + admin setup
@@ -74,7 +74,7 @@ Because `web` is source-connected to `main`, every `git push` to `main` triggers
 
 ## Health checks
 
-`GET /health` sits behind admin authentication (see [SECURITY.md](SECURITY.md)), so it isn't usable as a public infrastructure health check as-is — Railway currently just verifies the process is listening on its port. To restore a real HTTP health check without exposing the authenticated diagnostics endpoint, add a small public `GET /healthz` liveness route (returns `200 OK` with no DB query) and point Railway's health check at that instead — tracked in the README's Future Enhancements.
+There's no dedicated health-check endpoint — Railway currently just verifies the process is listening on its port. A public `GET /healthz` liveness route (returns `200 OK` with no DB query) would let Railway's health check target something more meaningful — tracked in the README's Future Enhancements.
 
 ## Rollback
 

@@ -4,7 +4,7 @@ Trimly is a layered monolith — one deployable Node.js process, internally orga
 
 ## Why a layered monolith (not microservices)
 
-Microservices solve organizational and independent-scaling problems — they don't automatically make an app faster or more "production-grade." This project has no team-ownership boundary and no component that needs to scale independently of the others, so a single well-layered process is the correct architecture, not a simplification. The layering itself (not the process count) is what gives us testability, single-responsibility modules, and the ability to swap implementations (e.g. LFU cache → Redis) without touching unrelated code.
+Microservices solve organizational and independent-scaling problems — they don't automatically make an app faster or more "production-grade." This project has no team-ownership boundary and no component that needs to scale independently of the others, so a single well-layered process is the correct architecture, not a simplification. The layering itself (not the process count) is what gives us testability, single-responsibility modules, and the ability to swap implementations (e.g. LRU cache → Redis) without touching unrelated code.
 
 ## System Architecture
 
@@ -18,12 +18,11 @@ flowchart TB
         Controller["Controller<br/>src/controllers"]
         Validator["Validator<br/>src/validators"]
         Service["Service Layer<br/>src/services"]
-        Auth["Auth Middleware<br/>verifyJWT → authenticateAdmin → requireAdmin"]
+        Auth["Auth Middleware<br/>verifyJWT → identifyActor / authenticateAdmin → requireAdmin"]
     end
 
-    Cache[("LFU Cache<br/>in-memory")]
+    Cache[("LRU Cache<br/>in-memory")]
     DB[("MySQL<br/>via connection pool")]
-    Mail["Email Service<br/>(Ethereal / real SMTP)"]
 
     Client --> MW --> Router --> Controller
     Controller --> Validator
@@ -31,12 +30,11 @@ flowchart TB
     Controller --> Service
     Service --> Cache
     Service --> DB
-    Service --> Mail
 ```
 
 ## MVC + Service Layer flow
 
-Every request follows the same shape, whether it's a public shorten request or an authenticated admin action:
+Every request follows the same shape, whether it's a URL-creation request from an admin or a regular user:
 
 ```mermaid
 sequenceDiagram
@@ -78,7 +76,7 @@ This is the **Single Responsibility Principle** applied at the architectural lev
 Node.js runs application JavaScript on a single thread but handles thousands of concurrent connections via an event loop and non-blocking I/O (backed by libuv). A route handler that does `await db.query(...)` doesn't block the thread while waiting — Node hands the I/O operation to the OS/libuv and is free to process other requests, resuming this handler only when the result is ready.
 
 This is why:
-- The **LFU cache lookup must be synchronous and in-memory** — any slow synchronous operation blocks the entire event loop for *every* request, not just the current one.
+- The **LRU cache lookup must be synchronous and in-memory** — any slow synchronous operation blocks the entire event loop for *every* request, not just the current one.
 - **Analytics writes** (click count, last-accessed timestamp) fire *after* the redirect response is already sent, rather than being awaited first — the user should never wait on bookkeeping.
 
 ## Request flows
@@ -86,21 +84,19 @@ This is why:
 ### URL creation
 ```mermaid
 flowchart LR
-    A[POST /api/url] --> B{Custom alias?}
-    B -- yes --> C[Check alias not taken]
-    C -- taken --> E[409 Conflict]
-    C -- free --> F[INSERT with is_custom_alias=true]
-    B -- no --> D[Hash long_url, check for existing non-custom entry]
-    D -- found & not expired --> G[Return existing short URL]
-    D -- not found --> H[Generate unique short code, INSERT]
-    F --> I[201 Created]
-    H --> I
+    A["POST /api/url<br/>(requires admin or user session)"] --> B[Check daily limit<br/>non-admins only]
+    B -- limit reached --> C[429 Too Many Requests]
+    B -- ok --> D[Hash long_url, check for an existing entry owned by this caller]
+    D -- found & not expired --> E[Return existing short URL]
+    D -- not found --> F[Generate unique short code, INSERT owned by caller]
+    F --> G[201 Created]
+    E --> G
 ```
 
 ### Redirect (the hot path)
 ```mermaid
 flowchart LR
-    A["GET /:shortCode"] --> B{In LFU cache?}
+    A["GET /:shortCode"] --> B{In LRU cache?}
     B -- hit --> C[Use cached long_url]
     B -- miss --> D[Query MySQL]
     D --> E[Populate cache]
@@ -115,7 +111,7 @@ flowchart LR
     A["GET /api/admin/dashboard"] --> B[Aggregate totals from urls table]
     A --> C["Most-clicked (ORDER BY click_count)"]
     A --> D["Clicks over time (GROUP BY DATE from click_events)"]
-    A --> E[LFU cache statistics]
+    A --> E[LRU cache statistics]
     B & C & D & E --> F[Combined JSON response]
 ```
 

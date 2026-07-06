@@ -4,9 +4,11 @@ Technical deep-dive into this project's security design. For how to *report* a v
 
 ## Threat-model summary
 
-Single-role admin system, no public user accounts. The attack surface that matters most: (1) the public shorten/redirect endpoints being abused, (2) the admin login being brute-forced, (3) a stolen session token, (4) injection (SQL/XSS/HPP) against public input fields.
+Two account types — admins (full access) and regular users (own their own links) — sharing one JWT/cookie session mechanism. The attack surface that matters most: (1) the redirect endpoint being abused, (2) admin/user login being brute-forced, (3) a stolen session token, (4) injection (SQL/XSS/HPP) against public input fields.
 
 ## Authentication
+
+Shown below for the admin login flow (`/api/auth/login`); user login (`/api/users/login`) follows the identical shape against the `users` table instead of `admins`.
 
 ```mermaid
 sequenceDiagram
@@ -50,17 +52,17 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     Req[Incoming request] --> V["verifyJWT<br/>(decode + check signature/expiry — no DB hit)"]
-    V -- invalid/missing --> R1["401 JSON (API) or redirect /login (page)"]
-    V -- valid --> A["authenticateAdmin<br/>(DB lookup: does this admin still exist?)"]
+    V -- invalid/missing --> R1["401 JSON (API) or redirect /login or /account (page)"]
+    V -- valid --> A["authenticateAdmin / authenticateUser<br/>(DB lookup: does this account still exist?)"]
     A -- not found --> R2[401 / redirect, cookie cleared]
-    A -- found --> G["requireAdmin<br/>(guard — placeholder for future roles)"]
-    G --> H[Route handler, req.admin available]
+    A -- found --> G["requireAdmin / requireUser<br/>(role guard)"]
+    G --> H[Route handler, req.admin or req.user available]
 ```
 
 Three separate middlewares instead of one combined check:
-- `verifyJWT` is cheap (no DB) and runs on every protected request without adding database load just to check a signature.
-- `authenticateAdmin` catches the case where an admin account was deleted *after* a still-unexpired token was issued.
-- `requireAdmin` is currently a thin guard (single-role system), kept separate so a future multi-role system (`requireAdmin(['superadmin'])`) has a natural place to grow into without re-plumbing every route.
+- `verifyJWT` is cheap (no DB) and runs on every protected request without adding database load just to check a signature. It decodes the JWT's `role` claim (`ADMIN` or `USER`) but doesn't dispatch on it itself.
+- `authenticateAdmin`/`authenticateUser` catch the case where an account was deleted (or, for users, deactivated) *after* a still-unexpired token was issued.
+- `requireAdmin`/`requireUser` are thin role guards — most routes need exactly one of the two; `POST /api/url` is the one route that accepts either, via a separate `identifyActor` middleware that dispatches on the JWT's role claim and normalizes both account shapes into `req.actor` (see `src/middleware/auth.middleware.js`).
 
 ## Session / cookie security
 
@@ -77,9 +79,7 @@ Three separate middlewares instead of one combined check:
 
 Two independent mechanisms, deliberately not merged into one:
 - **Per-account lockout** (`admins.failed_attempts`/`locked_until`) — stops one account being brute-forced from many IPs (e.g. a botnet).
-- **Per-IP rate limiting** (`loginLimiter`, `otpRequestLimiter`, `otpVerifyLimiter` in `src/middleware/rateLimiter.js`) — stops one IP from brute-forcing/spamming many accounts or the OTP endpoints.
-
-A 6-digit OTP has only ~1,000,000 possibilities — without `otpVerifyLimiter` capping verification attempts, it would be brute-forceable well within its 10-minute expiry window.
+- **Per-IP rate limiting** (`loginLimiter` in `src/middleware/rateLimiter.js`, shared by admin login and user register/login) — stops one IP from brute-forcing/spamming many accounts.
 
 ## Injection defense
 
@@ -87,18 +87,11 @@ A 6-digit OTP has only ~1,000,000 possibilities — without `otpVerifyLimiter` c
 - **XSS**: `src/middleware/security.js` sanitizes `req.body`/`req.query`/`req.params` recursively via the `xss` package before any handler sees them; Helmet also sets a restrictive Content-Security-Policy.
 - **HPP (HTTP Parameter Pollution)**: `hpp()` middleware strips duplicate query parameters that could otherwise confuse validation logic.
 
-## Password reset (OTP) — no real email account exposed
-
-The forgot-password flow sends its OTP through **Ethereal**, Nodemailer's own sandboxed test-SMTP service — not a real email provider. This was a deliberate choice: wiring up a real personal or team email account (even via SMTP app password) is a real credential-exposure risk in a public repository, and Ethereal exercises the exact same SMTP send code path a real provider would use, without any real credentials existing anywhere in the codebase or environment. See [CACHE.md](CACHE.md)-style production-swap note: in production, only `src/services/email.service.js`'s transporter needs to change (to Resend/SendGrid/Brevo/etc. via an API-key env var) — nothing else in the auth flow changes.
-
-The OTP itself is SHA-256-hashed at rest (not stored in plaintext), single-use (cleared after a successful reset), and time-boxed to 10 minutes.
-
 ## Audit logging
 
-Every security-relevant action is recorded in `admin_logs` with the acting admin (when known), IP, user agent, and timestamp: `login`, `login_failed`, `account_locked`, `login_blocked_locked`, `logout`, `password_change`, `password_reset_requested`, `password_reset`, `delete_url`, `restore_url`.
+Every security-relevant action is recorded in `admin_logs` with the acting admin (when known), IP, user agent, and timestamp: `login`, `login_failed`, `account_locked`, `login_blocked_locked`, `logout`, `password_change`, `delete_url`, `restore_url`, `delete_user`.
 
 ## Known limitations (stated explicitly, not hidden)
 
 - No JWT revocation mechanism — a stolen token is valid until it naturally expires (2 hours). A production system handling more sensitive data would add a token blocklist or move to short-lived access tokens + refresh tokens.
-- Single admin role — no granular permissions yet (see `requireAdmin`'s design note above for the intended extension point).
-- `/health` is behind auth, which means it can't currently serve as an automated infrastructure health check without a session (see [DEPLOYMENT.md](DEPLOYMENT.md)).
+- No public infrastructure health-check endpoint — the health check was removed along with its authenticated-only route; see [README's Future Enhancements](../README.md#future-enhancements) for the planned public `GET /healthz` replacement.

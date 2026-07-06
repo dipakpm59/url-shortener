@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Trimly</h1>
-<p align="center"><strong>A production-style URL Shortener built with Node.js, Express &amp; MySQL</strong><br/>Featuring a hand-built O(1) LFU cache, JWT admin authentication with OTP password reset, click analytics, QR codes, and full audit logging.</p>
+<p align="center"><strong>A production-style URL Shortener built with Node.js, Express &amp; MySQL</strong><br/>Featuring a hand-built O(1) LRU cache, role-based JWT authentication for admins and users, click analytics, QR codes, and full audit logging.</p>
 
 <p align="center">
   <a href="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
@@ -48,7 +48,7 @@ The shorten → redirect → QR code flow is fully public — try it right now, 
 - [Admin Dashboard](#admin-dashboard)
 - [Analytics Dashboard](#analytics-dashboard)
 - [Authentication &amp; Security](#authentication--security)
-- [LFU Cache](#lfu-cache)
+- [LRU Cache](#lru-cache)
 - [QR Code Generation](#qr-code-generation)
 - [Logging](#logging)
 - [Future Enhancements](#future-enhancements)
@@ -61,10 +61,10 @@ The shorten → redirect → QR code flow is fully public — try it right now, 
 
 | | |
 |---|---|
-| 🔗 **URL Shortening** | Custom aliases, automatic duplicate detection, optional expiry dates |
-| ⚡ **Custom LFU Cache** | Hand-built, from-scratch O(1) Least-Frequently-Used cache in front of MySQL — no Redis |
-| 🔐 **JWT Admin Auth** | HttpOnly cookies, bcrypt hashing, account lockout, full audit logging |
-| 📧 **OTP Password Reset** | 6-digit code, sandboxed test-mailer (no real email credentials required) |
+| 🔗 **URL Shortening** | Auto-generated short codes, automatic duplicate detection, optional expiry dates |
+| ⚡ **Custom LRU Cache** | Hand-built, from-scratch O(1) Least-Recently-Used cache in front of MySQL — no Redis |
+| 🔐 **Role-Based JWT Auth** | Separate admin and user accounts, HttpOnly cookies, bcrypt hashing, account lockout, full audit logging |
+| 👤 **User Accounts** | Self-serve registration/login, per-user link ownership, isolated analytics, daily creation limit |
 | 📊 **Click Analytics** | Click counts, last-accessed timestamps, clicks-over-time chart |
 | 📱 **QR Codes** | Instantly generated for every short URL |
 | 🗑️ **Soft Delete &amp; Restore** | Links are never hard-deleted — fully reversible |
@@ -93,13 +93,13 @@ Layered MVC + Service architecture — Router → Controller → Validator → S
 ```mermaid
 flowchart LR
     Client --> MW[Security Middleware] --> Router --> Controller --> Service
-    Service --> Cache[(LFU Cache)]
+    Service --> Cache[(LRU Cache)]
     Service --> DB[(MySQL)]
 ```
 
 **Redirect flow (the hot path):**
 ```
-GET /:shortCode → LFU cache lookup
+GET /:shortCode → LRU cache lookup
     → HIT:  return cached long_url, redirect immediately
     → MISS: query MySQL, populate cache, redirect
   → click_count / last_accessed_at / click_events updated
@@ -114,7 +114,7 @@ src/
 ├── constants/    # HTTP status codes, user-facing messages
 ├── models/       # parameterized SQL query modules (no ORM)
 ├── validators/   # input validation (URL, auth, password rules)
-├── cache/        # custom O(1) LFU cache implementation
+├── cache/        # custom O(1) LRU cache implementation
 ├── services/     # business logic: url, cache, qrcode, analytics, auth, email
 ├── controllers/  # HTTP req/res translation
 ├── routes/       # Express routers
@@ -161,14 +161,14 @@ cp .env.example .env
 |---|---|
 | `PORT`, `BASE_URL` | Server port and public base URL (used to build short URLs) |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL connection |
-| `CACHE_CAPACITY` | Max entries held by the LFU cache (default `500`) |
+| `CACHE_CAPACITY` | Max entries held by the LRU cache (default `500`) |
+| `DAILY_URL_LIMIT_PER_USER` | Max URLs a non-admin user can create per day (default `10`) |
 | `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS` | API rate limiting |
 | `SHORT_CODE_LENGTH` | Length of generated short codes |
 | `JWT_SECRET` | Signing key for admin sessions — generate with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN`, `COOKIE_NAME` | Session token lifetime (default `2h`) and cookie name |
 | `MAX_LOGIN_ATTEMPTS`, `LOCK_DURATION_MINUTES` | Account lockout thresholds |
 | `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Used only by `npm run db:seed` |
-| `OTP_EXPIRY_MINUTES` | Password-reset OTP lifetime |
 
 See [.env.example](.env.example) for the complete, always-up-to-date list.
 
@@ -203,11 +203,12 @@ Full endpoint reference with request/response examples: **[docs/API.md](docs/API
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/url` | Public | Create a short URL |
+| POST | `/api/url` | 🔒 | Create a short URL (admin or user session) |
 | GET | `/:shortCode` | Public | Redirect to the original URL |
 | GET | `/api/url/:shortCode/qrcode` | Public | Get a QR code |
 | POST | `/api/auth/login` | Public | Admin login |
-| POST | `/api/auth/forgot-password` | Public | Request an OTP reset code |
+| POST | `/api/users/register` | Public | User registration |
+| POST | `/api/users/login` | Public | User login |
 | PUT | `/api/url/:id` | 🔒 | Update a URL |
 | DELETE | `/api/url/:id` | 🔒 | Soft-delete a URL |
 | GET | `/api/admin/dashboard` | 🔒 | Aggregate stats + analytics + cache stats |
@@ -216,7 +217,8 @@ Full endpoint reference with request/response examples: **[docs/API.md](docs/API
 ```bash
 curl -X POST https://web-production-581a.up.railway.app/api/url \
   -H "Content-Type: application/json" \
-  -d '{"longUrl": "https://example.com/some/very/long/path", "customAlias": "my-link"}'
+  -b "admin_token=<your session cookie>" \
+  -d '{"longUrl": "https://example.com/some/very/long/path"}'
 ```
 
 ## Admin Dashboard
@@ -225,11 +227,11 @@ Protected (`/admin`) — search/sort/paginate every shortened URL, soft-delete/r
 
 ## Analytics Dashboard
 
-Protected (`/analytics`) — a Chart.js line chart of clicks over the last 14 days, a most-clicked-URLs table, and live LFU cache statistics (hit rate, size, evictions).
+Protected (`/analytics`) — a Chart.js line chart of clicks over the last 14 days, a most-clicked-URLs table, and live LRU cache statistics (hit rate, size, evictions).
 
 ## Authentication & Security
 
-Single-role JWT admin authentication — see the full technical write-up (auth flow diagrams, cookie security, brute-force defense-in-depth, injection defenses) in **[docs/SECURITY.md](docs/SECURITY.md)**, and the responsible-disclosure policy in **[SECURITY.md](SECURITY.md)**.
+Role-based JWT authentication for two account types — admins (full access to every URL and the audit log) and regular users (own their own links, isolated analytics, daily creation limit). See the full technical write-up (auth flow diagrams, cookie security, brute-force defense-in-depth, injection defenses) in **[docs/SECURITY.md](docs/SECURITY.md)**, and the responsible-disclosure policy in **[SECURITY.md](SECURITY.md)**.
 
 **At a glance:**
 - Passwords hashed with **bcrypt** (12 salt rounds) — never stored or logged in plaintext.
@@ -238,9 +240,9 @@ Single-role JWT admin authentication — see the full technical write-up (auth f
 - **Parameterized SQL** everywhere — no string-concatenated queries.
 - **Helmet, HPP, XSS sanitization, CORS** on every request.
 
-## LFU Cache
+## LRU Cache
 
-A hand-built, from-scratch **O(1) Least-Frequently-Used cache** sits in front of MySQL for the redirect endpoint — no Redis. Full data-structure walkthrough, complexity analysis, LFU-vs-LRU comparison, and the production Redis migration path: **[docs/CACHE.md](docs/CACHE.md)**.
+A hand-built, from-scratch **O(1) Least-Recently-Used cache** sits in front of MySQL for the redirect endpoint — no Redis. Full data-structure walkthrough, complexity analysis, LRU-vs-LFU comparison, and the production Redis migration path: **[docs/CACHE.md](docs/CACHE.md)**.
 
 ```mermaid
 flowchart LR
@@ -260,25 +262,21 @@ Structured logging via Morgan (HTTP request logs) plus a custom logger (`src/uti
 
 ## Future Enhancements
 
-- [ ] Automated test suite (unit tests for the LFU cache and services, integration tests for the API)
-- [ ] Swap the in-process LFU cache for Redis to share cache state across multiple instances
+- [ ] Automated test suite (unit tests for the LRU cache and services, integration tests for the API)
+- [ ] Swap the in-process LRU cache for Redis to share cache state across multiple instances
 - [ ] Move click-event writes to a message queue, fully decoupling redirect latency from analytics
 - [ ] Refresh tokens / JWT revocation for true session invalidation
-- [ ] Multi-role admin system (`requireAdmin` is already structured to grow into role-based checks)
 - [ ] A visible audit-log page in the admin UI (data already captured in `admin_logs`)
 - [ ] A public `GET /healthz` liveness route so hosting platforms can run automated health checks
 - [ ] Read replica for MySQL to separate redirect (read) traffic from write traffic
 
 ## FAQ
 
-**Why LFU instead of LRU or no cache at all?**
-URL shortener traffic is power-law distributed — a few links get most of the clicks. LFU keeps genuinely popular links resident even through short quiet periods, where LRU would evict them. Full reasoning in [docs/CACHE.md](docs/CACHE.md).
+**Why LRU instead of LFU or no cache at all?**
+LRU is the simplest policy that still meaningfully cuts database load for the redirect path, and needs no per-key frequency bookkeeping to maintain. Full reasoning and the LRU-vs-LFU tradeoff in [docs/CACHE.md](docs/CACHE.md).
 
 **Why is the JWT in a cookie instead of `localStorage`?**
 `localStorage` is readable by any JavaScript on the page, including an XSS payload — a single XSS bug means the token is stolen. An `HttpOnly` cookie is invisible to JavaScript entirely. See [docs/SECURITY.md](docs/SECURITY.md).
-
-**Why doesn't the forgot-password email actually arrive in my inbox?**
-It's intentionally sent through **Ethereal**, a sandboxed test-SMTP service — not a real provider. This avoids exposing any real personal or team email credentials in a public repository, while still exercising a genuine SMTP send path. The response includes a preview link to view the "sent" email. See [docs/SECURITY.md](docs/SECURITY.md) for the full reasoning.
 
 **Why MySQL and not PostgreSQL/MongoDB?**
 The project spec called for MySQL specifically; the schema/queries are plain parameterized SQL with no ORM, so porting to PostgreSQL would mainly mean adjusting a handful of MySQL-specific syntax choices (e.g. `ON UPDATE CURRENT_TIMESTAMP`).

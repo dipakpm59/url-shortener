@@ -1,7 +1,7 @@
 {
   "name": "url-shortener",
   "version": "1.1.0",
-  "description": "Production-grade URL Shortener built with Node.js, Express & MySQL — featuring a hand-built O(1) LFU cache, JWT admin authentication with OTP password reset, click analytics, QR codes, and full audit logging.",
+  "description": "Production-grade URL Shortener built with Node.js, Express & MySQL — featuring a hand-built O(1) LRU cache, role-based JWT authentication for admins and users, click analytics, QR codes, and full audit logging.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -16,8 +16,8 @@
     "nodejs",
     "express",
     "mysql",
-    "lfu-cache",
-    "lfu",
+    "lru-cache",
+    "lru",
     "caching",
     "jwt-auth",
     "jwt",

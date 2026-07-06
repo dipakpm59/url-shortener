@@ -13,36 +13,34 @@ All responses are JSON with a consistent envelope:
 { "success": false, "status": "fail", "message": "..." }
 ```
 
-🔒 = requires a valid `admin_token` cookie (see [SECURITY.md](SECURITY.md) and the main [README's Authentication section](../README.md#authentication)).
+🔒 = requires a valid session cookie (admin or user — see [SECURITY.md](SECURITY.md) and the main [README's Authentication section](../README.md#authentication)). Endpoints under **Admin Endpoints** require an admin session specifically; `POST /api/url` accepts either.
 
 ---
 
 ## URL Endpoints
 
-### `POST /api/url` — Create a short URL
-**Public.** Rate-limited (20/min/IP).
+### `POST /api/url` 🔒 — Create a short URL
+Requires an admin or user session. Rate-limited (20/min/IP).
 
 **Body:**
 ```json
 {
   "longUrl": "https://example.com/some/very/long/path",
-  "customAlias": "my-link",
   "expiresAt": "2026-12-31T00:00:00.000Z"
 }
 ```
-`customAlias` and `expiresAt` are optional.
+`expiresAt` is optional. The URL is owned by whichever session created it. Non-admin users are capped at `DAILY_URL_LIMIT_PER_USER` creations per day; admins are uncapped.
 
-**Response `201 Created`** (or `200 OK` if an identical non-alias URL already exists and is reused):
+**Response `201 Created`** (or `200 OK` if an identical URL already exists and is reused):
 ```json
 {
   "success": true,
   "message": "Short URL created successfully.",
   "data": {
     "id": 1,
-    "shortCode": "my-link",
-    "shortUrl": "http://localhost:3000/my-link",
+    "shortCode": "aB3xY9z",
+    "shortUrl": "http://localhost:3000/aB3xY9z",
     "longUrl": "https://example.com/some/very/long/path",
-    "isCustomAlias": true,
     "clickCount": 0,
     "createdAt": "2026-07-03T10:00:00.000Z",
     "lastAccessedAt": null,
@@ -53,7 +51,7 @@ All responses are JSON with a consistent envelope:
 }
 ```
 
-**Errors:** `400` invalid URL / invalid alias format / reserved alias, `409` alias already taken.
+**Errors:** `400` invalid URL, `429` daily creation limit reached (non-admin users only).
 
 ### `GET /api/url/:shortCode` — Get metadata
 **Public.** Returns the same shape as above. `404` if not found, `410` if expired.
@@ -96,14 +94,32 @@ Returns the current admin's profile (`id`, `username`, `email`, `createdAt` — 
 **Body:** `{ "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }`
 New password must be 8+ characters with uppercase, lowercase, a digit, and a special character.
 
-### `POST /api/auth/forgot-password` — Request an OTP
-**Public.** Rate-limited (5/hour/IP). **Body:** `{ "email": "..." }`
-Always returns the same generic message (prevents email enumeration). In non-production, the response includes `data.previewUrl` — a link to view the "sent" email (see [SECURITY.md](SECURITY.md) for why this project uses a sandboxed test mailer instead of a real SMTP account).
+---
 
-### `POST /api/auth/reset-password` — Verify OTP + set new password
-**Public.** Rate-limited (10/15min/IP — a 6-digit OTP has only ~1M combinations, so verification attempts must be capped tightly).
-**Body:** `{ "email": "...", "otp": "123456", "newPassword": "...", "confirmPassword": "..." }`
-OTP is single-use and expires after 10 minutes. A successful reset also clears any account lockout.
+## User Endpoints
+
+Regular (non-admin) account holders. 🔑 = requires a valid user session cookie (same `admin_token` cookie, issued with a `USER` role claim instead of `ADMIN`).
+
+### `POST /api/users/register` — Register
+**Public.** Rate-limited (shares the login rate limiter). **Body:** `{ "username": "...", "email": "...", "password": "..." }`
+
+### `POST /api/users/login` — Login
+**Public.** **Body:** `{ "identifier": "...", "password": "...", "rememberMe": true }` (`identifier` is username or email). Sets the same `HttpOnly` JWT cookie pattern as admin login.
+
+### `POST /api/users/logout` 🔑
+Clears the session cookie.
+
+### `GET /api/users/me` 🔑
+Returns the current user's profile.
+
+### `GET /api/users/me/urls` 🔑
+Lists URLs owned by the current user (same `page`/`limit`/`search`/`sortBy`/`sortOrder` query params as `GET /api/admin/urls`).
+
+### `DELETE /api/users/me/urls/:id` 🔑
+Soft-deletes a URL — only if it's owned by the current user.
+
+### `GET /api/users/me/analytics` 🔑
+Per-user dashboard summary: this user's totals, most-clicked links, and clicks-over-time.
 
 ---
 
@@ -114,25 +130,15 @@ All require 🔒.
 **Query params:** `page`, `limit` (max 100), `search`, `sortBy` (`created_at`|`click_count`|`last_accessed_at`|`expires_at`), `sortOrder` (`asc`|`desc`), `includeDeleted` (`true`|`false`).
 
 ### `GET /api/admin/dashboard`
-Combined: totals (URLs/clicks/deleted/expired), top 10 most-clicked, clicks-over-time (last 14 days), LFU cache statistics.
+Combined: totals (URLs/clicks/deleted/expired), top 10 most-clicked, clicks-over-time (last 14 days), LRU cache statistics.
 
 ### `GET /api/admin/analytics`
 Just the most-clicked + clicks-over-time subset of the above.
 
-### `GET /api/admin/cache` — LFU cache statistics
+### `GET /api/admin/cache` — LRU cache statistics
 ```json
 { "success": true, "data": { "capacity": 500, "size": 12, "hits": 340, "misses": 45, "hitRate": 88.31, "evictions": 0, "puts": 57 } }
 ```
 
 ### `DELETE /api/admin/cache` — Clear the cache
 Evicts everything immediately; the next redirect for any short code becomes a cache miss.
-
----
-
-## Health
-
-### `GET /health` 🔒
-```json
-{ "success": true, "status": "healthy", "uptimeSeconds": 372, "timestamp": "...", "database": "ok" }
-```
-Note: this sits behind admin auth (see [SECURITY.md](SECURITY.md) for why), so it isn't currently wired up as an automated infra health check on the live deployment.

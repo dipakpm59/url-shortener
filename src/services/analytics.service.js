@@ -22,7 +22,7 @@ async function getDashboardSummary() {
 }
 
 // Same shape as getDashboardSummary, scoped to one user's own links. No
-// cacheStats here — the LFU cache is shared/global infrastructure, not a
+// cacheStats here — the LRU cache is shared/global infrastructure, not a
 // meaningful per-user metric.
 async function getUserDashboardSummary(userId) {
   const totals = await urlModel.countAllByOwnerUser(userId);
