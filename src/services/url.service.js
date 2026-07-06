@@ -13,10 +13,11 @@ const MAX_SHORT_CODE_COLLISION_RETRIES = 5;
 function toPublicShape(row) {
   return {
     id: row.id,
+    ownerType: row.owner_admin_id != null ? 'ADMIN' : 'USER',
+    ownerId: row.owner_admin_id != null ? row.owner_admin_id : row.owner_user_id,
     longUrl: row.long_url,
     shortCode: row.short_code,
     shortUrl: `${env.baseUrl}/${row.short_code}`,
-    isCustomAlias: Boolean(row.is_custom_alias),
     clickCount: row.click_count,
     createdAt: row.created_at,
     lastAccessedAt: row.last_accessed_at,
@@ -35,31 +36,30 @@ async function generateUniqueShortCode() {
   throw new AppError('Could not generate a unique short code. Please try again.', httpStatus.INTERNAL_SERVER_ERROR);
 }
 
-async function createShortUrl({ longUrl, customAlias, expiresAt }) {
+async function createShortUrl({ longUrl, expiresAt }, actor) {
+  const isAdmin = actor.role === 'ADMIN';
+  const ownerAdminId = isAdmin ? actor.id : null;
+  const ownerUserId = isAdmin ? null : actor.id;
+
+  // Per-user daily cap — admins are uncapped. Checked before any writes so
+  // a user at their limit never even reaches short-code generation.
+  if (!isAdmin) {
+    const todayCount = await urlModel.countTodayByOwnerUser(actor.id);
+    if (todayCount >= env.url.dailyLimitPerUser) {
+      throw new AppError(messages.URL.DAILY_LIMIT_REACHED, httpStatus.TOO_MANY_REQUESTS);
+    }
+  }
+
   const longUrlHash = sha256(longUrl);
   // MySQL's TIMESTAMP columns reject ISO 8601 strings ('...T...Z') under strict
   // mode — mysql2 only auto-formats real JS Date objects, so we convert here,
   // once, at the service boundary where the raw request string enters the system.
   const normalizedExpiresAt = expiresAt ? new Date(expiresAt) : null;
 
-  if (customAlias) {
-    const existingAlias = await urlModel.findByShortCode(customAlias);
-    if (existingAlias) {
-      throw new AppError(messages.URL.ALIAS_TAKEN, httpStatus.CONFLICT);
-    }
-    const created = await urlModel.create({
-      longUrl,
-      longUrlHash,
-      shortCode: customAlias,
-      isCustomAlias: true,
-      expiresAt: normalizedExpiresAt,
-    });
-    return { data: toPublicShape(created), reused: false };
-  }
-
-  // Duplicate detection: reuse an existing non-custom, non-deleted short code
-  // for the same long URL instead of minting a new one.
-  const existing = await urlModel.findExistingByHash(longUrlHash);
+  // Duplicate detection: reuse an existing non-deleted short code already
+  // owned by this same caller for the same long URL, instead of minting a
+  // new one. Scoped per-owner (not global) — see findExistingByHash.
+  const existing = await urlModel.findExistingByHash(longUrlHash, { ownerAdminId, ownerUserId });
   if (existing && !isExpired(existing)) {
     return { data: toPublicShape(existing), reused: true };
   }
@@ -69,8 +69,9 @@ async function createShortUrl({ longUrl, customAlias, expiresAt }) {
     longUrl,
     longUrlHash,
     shortCode,
-    isCustomAlias: false,
     expiresAt: normalizedExpiresAt,
+    ownerAdminId,
+    ownerUserId,
   });
   return { data: toPublicShape(created), reused: false };
 }
@@ -136,6 +137,18 @@ async function softDeleteUrl(id) {
   return toPublicShape(row);
 }
 
+// Ownership-checked variant of softDeleteUrl for a user deleting their own
+// link. 404 (not 403) on a mismatch — same "don't reveal it exists" reasoning
+// as findActiveByShortCode: a user has no legitimate reason to learn that a
+// given id belongs to someone else.
+async function deleteOwnUrl(userId, id) {
+  const row = await urlModel.findById(id);
+  if (!row || row.owner_user_id !== Number(userId)) {
+    throw new AppError(messages.URL.NOT_FOUND, httpStatus.NOT_FOUND);
+  }
+  return softDeleteUrl(id);
+}
+
 async function restoreUrl(id) {
   const restored = await urlModel.restore(id);
   if (!restored) throw new AppError(messages.URL.NOT_FOUND, httpStatus.NOT_FOUND);
@@ -168,13 +181,33 @@ async function listUrls(query) {
   };
 }
 
+async function listMyUrls(userId, query) {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 20, 1), 100);
+  const offset = (page - 1) * limit;
+
+  const { rows, total } = await urlModel.listByOwnerUser(userId, { limit, offset });
+
+  return {
+    data: rows.map(toPublicShape),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
 module.exports = {
   createShortUrl,
   resolveShortUrl,
   recordClick,
   softDeleteUrl,
+  deleteOwnUrl,
   restoreUrl,
   listUrls,
+  listMyUrls,
   toPublicShape,
   isExpired,
 };

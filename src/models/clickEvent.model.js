@@ -21,6 +21,23 @@ const clickEventModel = {
     );
     return rows;
   },
+
+  // Same as clicksOverTime, scoped to one user's own links. click_events has
+  // no owner column of its own — ownership is only known via the url it
+  // points at, hence the join.
+  async clicksOverTimeByOwnerUser(userId, days = 14) {
+    const [rows] = await pool.query(
+      `SELECT DATE(ce.clicked_at) AS date, COUNT(*) AS clicks
+       FROM click_events ce
+       JOIN urls u ON u.id = ce.url_id
+       WHERE u.owner_user_id = :userId
+         AND ce.clicked_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+       GROUP BY DATE(ce.clicked_at)
+       ORDER BY date ASC`,
+      { userId, days }
+    );
+    return rows;
+  },
 };
 
 module.exports = clickEventModel;

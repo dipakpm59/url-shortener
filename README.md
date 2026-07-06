@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Snipr — Production-grade URL Shortener" width="100%" />
+  <img src="assets/banner.svg" alt="Trimly — Production-grade URL Shortener" width="100%" />
 </p>
 
-<h1 align="center">Snipr</h1>
+<h1 align="center">Trimly</h1>
 <p align="center"><strong>A production-style URL Shortener built with Node.js, Express &amp; MySQL</strong><br/>Featuring a hand-built O(1) LFU cache, JWT admin authentication with OTP password reset, click analytics, QR codes, and full audit logging.</p>
 
 <p align="center">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin Login — Snipr</title>
+<title>Admin Login — Trimly</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔗</text></svg>" />
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
       <div class="col-11 col-sm-8 col-md-6 col-lg-4">
 
         <div class="text-center mb-4">
-          <a href="/" class="navbar-brand fs-3 brand-mark"><i class="bi bi-link-45deg"></i> Snipr</a>
+          <a href="/" class="navbar-brand fs-3 brand-mark"><i class="bi bi-link-45deg"></i> Trimly</a>
           <div class="text-muted-soft small mt-1">Admin access only</div>
         </div>
 
@@ -28,9 +28,9 @@
 
           <form id="login-form" novalidate>
             <div class="mb-3">
-              <label class="form-label text-muted-soft small" for="email">Email</label>
-              <input type="email" id="email" class="form-control form-control-dark" placeholder="admin@example.com" required autocomplete="username">
-              <div class="invalid-feedback-custom small text-danger mt-1 d-none" id="email-error">Enter a valid email address.</div>
+              <label class="form-label text-muted-soft small" for="email">Email or Username</label>
+              <input type="text" id="email" class="form-control form-control-dark" placeholder="admin@example.com or admin" required autocomplete="username">
+              <div class="invalid-feedback-custom small text-danger mt-1 d-none" id="email-error">Enter your email or username.</div>
             </div>
 
             <div class="mb-2">
@@ -49,76 +49,16 @@
                 <input class="form-check-input" type="checkbox" id="remember-me">
                 <label class="form-check-label small text-muted-soft" for="remember-me">Remember me</label>
               </div>
-              <a href="#" class="small text-accent" id="forgot-password-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" style="color:var(--color-accent);">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn btn-brand btn-lg w-100" id="login-btn">
-              <span class="btn-label"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In</span>
+              <span class="btn-label"><i class="bi bi-box-arrow-in-right me-1"></i> Login</span>
             </button>
           </form>
         </div>
 
         <div class="text-center mt-4">
           <a href="/" class="text-muted-soft small"><i class="bi bi-arrow-left me-1"></i>Back to home</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content modal-content-dark p-2">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold">Reset your password</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-
-          <!-- Step 1: request a code -->
-          <form id="forgot-step1-form" novalidate>
-            <p class="text-muted-soft small">Enter your admin email and we'll send a 6-digit reset code.</p>
-            <div class="mb-3">
-              <label class="form-label text-muted-soft small">Email</label>
-              <input type="email" id="forgot-email" class="form-control form-control-dark" placeholder="admin@example.com" required>
-            </div>
-            <button type="submit" class="btn btn-brand w-100" id="forgot-step1-btn">
-              <span class="btn-label">Send Reset Code</span>
-            </button>
-          </form>
-
-          <!-- Persists across both steps: this app has no real mail server wired
-               up (see README), so this link is the only way to actually see the
-               OTP that was "sent". Sits outside both forms so hiding step 1 to
-               show step 2 doesn't hide this along with it. -->
-          <div class="d-none p-3 mb-3 text-center" id="preview-url-wrap" style="background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); border-radius:var(--radius-sm);">
-            <div class="small text-muted-soft mb-1">No real email is sent in this demo.</div>
-            <a href="#" id="preview-url-link" target="_blank" rel="noopener" class="fw-bold" style="color:var(--color-accent);">
-              <i class="bi bi-envelope-open me-1"></i>Click here to view your reset code
-            </a>
-          </div>
-
-          <!-- Step 2: enter code + new password -->
-          <form id="forgot-step2-form" novalidate class="d-none">
-            <p class="text-muted-soft small">Enter the code sent to <span id="forgot-email-display" class="fw-bold"></span>, plus your new password.</p>
-            <div class="mb-3">
-              <label class="form-label text-muted-soft small">6-digit code</label>
-              <input type="text" id="otp-input" class="form-control form-control-dark text-center" style="letter-spacing:6px; font-weight:700;" maxlength="6" inputmode="numeric" placeholder="000000" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label text-muted-soft small">New Password</label>
-              <input type="password" id="reset-new-password" class="form-control form-control-dark" required autocomplete="new-password">
-              <div class="small text-muted-soft mt-1">Min 8 characters, upper + lower case, a number, and a special character.</div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label text-muted-soft small">Confirm New Password</label>
-              <input type="password" id="reset-confirm-password" class="form-control form-control-dark" required autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn btn-brand w-100" id="forgot-step2-btn">
-              <span class="btn-label">Reset Password</span>
-            </button>
-            <button type="button" class="btn btn-outline-brand w-100 mt-2 btn-sm" id="resend-otp-btn">Resend code</button>
-          </form>
-
         </div>
       </div>
     </div>

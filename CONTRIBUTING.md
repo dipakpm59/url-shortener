@@ -1,4 +1,4 @@
-# Contributing to Snipr
+# Contributing to Trimly
 
 Thanks for considering a contribution — this started as a learning/portfolio project, but PRs, issues, and suggestions are genuinely welcome.
 

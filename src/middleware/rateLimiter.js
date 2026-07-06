@@ -45,35 +45,4 @@ const loginLimiter = rateLimit({
   },
 });
 
-// Requesting a reset code sends a real email — throttle hard to stop this
-// being used to spam an inbox or hammer the Gmail SMTP quota.
-const otpRequestLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  statusCode: httpStatus.TOO_MANY_REQUESTS,
-  message: {
-    success: false,
-    status: 'fail',
-    message: 'Too many reset requests. Please try again later.',
-  },
-});
-
-// A 6-digit OTP has only 1,000,000 possibilities — without a tight limit on
-// verification attempts, it's brute-forceable well within its 10-minute
-// expiry window. This is the control that actually makes that infeasible.
-const otpVerifyLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  statusCode: httpStatus.TOO_MANY_REQUESTS,
-  message: {
-    success: false,
-    status: 'fail',
-    message: 'Too many attempts. Please try again later.',
-  },
-});
-
-module.exports = { apiLimiter, shortenLimiter, loginLimiter, otpRequestLimiter, otpVerifyLimiter };
+module.exports = { apiLimiter, shortenLimiter, loginLimiter };

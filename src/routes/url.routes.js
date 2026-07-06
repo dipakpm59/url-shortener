@@ -1,15 +1,17 @@
 const express = require('express');
 const urlController = require('../controllers/url.controller');
 const { shortenLimiter } = require('../middleware/rateLimiter');
-const { verifyJWT, authenticateAdmin, requireAdmin } = require('../middleware/auth.middleware');
+const { verifyJWT, authenticateAdmin, requireAdmin, identifyActor } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 const requireAuth = [verifyJWT, authenticateAdmin, requireAdmin];
 
-// Public: creating a short URL, reading its metadata, and fetching its QR
-// code are part of the existing anonymous shorten-a-link flow on the
-// landing page and must stay unauthenticated.
-router.post('/', shortenLimiter, urlController.createShortUrl);
+// Creating a short URL now requires a logged-in ADMIN or USER session —
+// every url row is owned by exactly one of them, and the per-user daily
+// cap only means something if every creator is identified. Reading an
+// existing link's metadata/QR and the redirect itself stay public below —
+// only creation is gated.
+router.post('/', shortenLimiter, verifyJWT, identifyActor, urlController.createShortUrl);
 router.get('/:shortCode/qrcode', urlController.getQrCode);
 router.get('/:shortCode', urlController.getUrlDetails);
 

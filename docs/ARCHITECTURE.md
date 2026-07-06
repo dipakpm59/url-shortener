@@ -1,6 +1,6 @@
 # Architecture
 
-Snipr is a layered monolith — one deployable Node.js process, internally organized into distinct layers with single responsibilities (Router → Controller → Validator → Service → Model/Cache). This document covers the system-level architecture; for API contracts see [API.md](API.md), for the database see [DATABASE.md](DATABASE.md), for the cache see [CACHE.md](CACHE.md).
+Trimly is a layered monolith — one deployable Node.js process, internally organized into distinct layers with single responsibilities (Router → Controller → Validator → Service → Model/Cache). This document covers the system-level architecture; for API contracts see [API.md](API.md), for the database see [DATABASE.md](DATABASE.md), for the cache see [CACHE.md](CACHE.md).
 
 ## Why a layered monolith (not microservices)
 

@@ -52,9 +52,14 @@ async function apiRequest(url, options = {}) {
   // (JWT hits its 2h expiry mid-visit) surfaces here as a 401 on a fetch
   // call rather than a page navigation, so errorHandler's redirect never
   // fires. Handle it globally instead of in every page script — except on
-  // the login page itself, where a 401 just means "wrong password".
-  if (res.status === 401 && window.location.pathname !== '/login') {
-    window.location.href = '/login?expired=1';
+  // the login pages themselves, where a 401 just means "wrong password".
+  // The landing page ('/') is a special case: URL creation there now
+  // requires a regular USER (or ADMIN) session, so an anonymous visitor's
+  // 401 must go to the user account page, not the admin login.
+  const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/account';
+  if (res.status === 401 && !isAuthPage) {
+    const redirectPath = window.location.pathname === '/' ? '/account' : '/login';
+    window.location.href = `${redirectPath}?expired=1`;
     return new Promise(() => {}); // never resolves — navigation is already underway
   }
 

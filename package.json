@@ -9,7 +9,7 @@
     "dev": "nodemon server.js",
     "db:init": "node src/scripts/initDb.js",
     "db:seed": "node src/scripts/seedAdmin.js",
-    "test": "echo \"No automated test suite yet — see CONTRIBUTING.md for manual verification steps and CHANGELOG.md Future Enhancements.\" && exit 0"
+    "test": "node --test"
   },
   "keywords": [
     "url-shortener",
