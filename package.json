@@ -30,16 +30,16 @@
     "portfolio-project"
   ],
   "author": {
-    "name": "Aditya Thakur",
-    "url": "https://github.com/adityathakur-09"
+    "name": "Dipak Prasad Mandal",
+    "url": "https://github.com/dipakpm59"
   },
-  "homepage": "https://github.com/adityathakur-09/url-shortener#readme",
+  "homepage": "https://github.com/dipakpm59/url-shortener#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adityathakur-09/url-shortener.git"
+    "url": "git+https://github.com/dipakpm59/url-shortener.git"
   },
   "bugs": {
-    "url": "https://github.com/adityathakur-09/url-shortener/issues"
+    "url": "https://github.com/dipakpm59/url-shortener/issues"
   },
   "license": "MIT",
   "dependencies": {

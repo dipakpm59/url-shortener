@@ -8,8 +8,8 @@ If you discover a security vulnerability in this project, please **do not** open
 
 Instead, report it privately via one of these channels:
 
-- **GitHub Security Advisories**: use the ["Report a vulnerability"](https://github.com/adityathakur-09/url-shortener/security/advisories/new) button on this repo's Security tab (preferred).
-- Open a private discussion with the maintainer via their GitHub profile: [@adityathakur-09](https://github.com/adityathakur-09).
+- **GitHub Security Advisories**: use the ["Report a vulnerability"](https://github.com/dipakpm59/url-shortener/security/advisories/new) button on this repo's Security tab (preferred).
+- Open a private discussion with the maintainer via their GitHub profile: [@dipakpm59](https://github.com/dipakpm59).
 
 Please include:
 - A description of the vulnerability and its potential impact.

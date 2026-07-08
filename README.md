@@ -6,13 +6,12 @@
 <p align="center"><strong>A production-style URL Shortener built with Node.js, Express &amp; MySQL</strong><br/>Featuring a hand-built O(1) LRU cache, role-based JWT authentication for admins and users, click analytics, QR codes, and full audit logging.</p>
 
 <p align="center">
-  <a href="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/adityathakur-09/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+  <a href="https://github.com/dipakpm59/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/dipakpm59/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
   <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-339933?logo=node.js&logoColor=white" alt="Node.js"/>
   <img src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white" alt="Express"/>
   <img src="https://img.shields.io/badge/MySQL-8%2B-4479A1?logo=mysql&logoColor=white" alt="MySQL"/>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"/>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
-  <img src="https://img.shields.io/badge/deployed%20on-Railway-0B0D0E?logo=railway&logoColor=white" alt="Deployed on Railway"/>
 </p>
 
 <p align="center">
@@ -28,9 +27,7 @@
 
 ## Live Demo
 
-🔗 **https://web-production-581a.up.railway.app**
-
-The shorten → redirect → QR code flow is fully public — try it right now, no login needed. Admin dashboard credentials available on request (see [Author](#author)).
+🚧 Not deployed yet — deployment in progress. This section will be updated with a live URL once it's up.
 
 ## Table of Contents
 
@@ -148,7 +145,7 @@ server.js         # process entry point
 **Prerequisites:** Node.js 18+, a running MySQL 8+ instance.
 
 ```bash
-git clone https://github.com/adityathakur-09/url-shortener.git
+git clone https://github.com/dipakpm59/url-shortener.git
 cd url-shortener
 npm install
 ```
@@ -219,7 +216,7 @@ Full endpoint reference with request/response examples: **[docs/API.md](docs/API
 
 **Example:**
 ```bash
-curl -X POST https://web-production-581a.up.railway.app/api/url \
+curl -X POST http://localhost:3000/api/url \
   -H "Content-Type: application/json" \
   -b "admin_token=<your session cookie>" \
   -d '{"longUrl": "https://example.com/some/very/long/path"}'
@@ -289,7 +286,7 @@ The project spec called for MySQL specifically; the schema/queries are plain par
 No — every query is hand-written in `src/models/*.model.js` using `mysql2`'s named-placeholder parameterized queries. This was a deliberate choice for learning/interview purposes: understanding exactly what SQL runs, when, and why.
 
 **Can I run this without MySQL, just to poke around the frontend?**
-Not currently — the app requires a live MySQL connection at startup (`server.js` verifies the connection before listening). Easiest path: use the [live demo](#live-demo) instead.
+Not currently — the app requires a live MySQL connection at startup (`server.js` verifies the connection before listening).
 
 ## Contributing
 
@@ -297,10 +294,14 @@ Contributions are welcome — see **[CONTRIBUTING.md](CONTRIBUTING.md)** for set
 
 ## Author
 
-**Aditya Thakur**
-GitHub: [@adityathakur-09](https://github.com/adityathakur-09)
+**Dipak Prasad Mandal**
+GitHub: [@dipakpm59](https://github.com/dipakpm59)
 
-Built as a hands-on backend engineering project to go deep on system design fundamentals — layered architecture, caching strategy, authentication, and production security concerns — rather than just shipping a CRUD app.
+Originally created by [Aditya Thakur](https://github.com/adityathakur-09) as a hands-on backend engineering project to go deep on system design fundamentals — layered architecture, caching strategy, authentication, and production security concerns — rather than just shipping a CRUD app. This fork builds on that base and adds:
+
+- A fix for a privilege-escalation bug in the admin/user auth middleware (it checked a JWT's id but never its role — see the commit history for details)
+- An automated test suite (`node --test`) covering auth, login lockout, and URL creation, previously untested
+- Cleanup of unused dependencies and dead code
 
 ## License
 
