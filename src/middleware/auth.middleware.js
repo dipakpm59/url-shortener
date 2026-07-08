@@ -45,6 +45,10 @@ function verifyJWT(req, res, next) {
  */
 async function authenticateAdmin(req, res, next) {
   try {
+    if (req.tokenPayload.role !== 'ADMIN') {
+      res.clearCookie(env.cookie.name);
+      return next(unauthorized('Not authenticated.'));
+    }
     const admin = await adminModel.findById(req.tokenPayload.sub);
     if (!admin) {
       res.clearCookie(env.cookie.name);
@@ -79,6 +83,10 @@ function requireAdmin(req, res, next) {
  */
 async function authenticateUser(req, res, next) {
   try {
+    if (req.tokenPayload.role !== 'USER') {
+      res.clearCookie(env.cookie.name);
+      return next(unauthorized('Not authenticated.'));
+    }
     const user = await userModel.findById(req.tokenPayload.sub);
     if (!user) {
       res.clearCookie(env.cookie.name);
